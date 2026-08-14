@@ -166,16 +166,11 @@ mais simples e mais confiável possível.
 
 ## Pendências a confirmar com o cliente
 
-- Confirmar se acabamento/puxador devem mesmo ser únicos pra composição
-  toda, ou se o cliente quer seleção por módulo desde o MVP.
-- Confirmar a regra de sobra de espaço acima (avisar-mas-permitir vs.
-  travar).
-- Decidir a forma de embutir no site: iframe (recomendado, ver seção
-  acima) vs. link simples pra fora.
-- Validar em ambiente de teste (não produção) que o fluxo de
-  "add-to-cart em sequência via iframe" realmente popula o carrinho —
-  ainda não testado ponta a ponta num navegador real contra o site ao
-  vivo, só a API de leitura foi validada.
+- Confirmar se acabamento/puxador devem mesmo ser únicos pra composição toda, ou se o cliente quer seleção por módulo desde o MVP.
+- Confirmar a regra de sobra de espaço acima (avisar-mas-permitir vs. travar).
+- Decidir a forma de embutir no site: iframe (recomendado, ver seção acima) vs. link simples pra fora.
+- Validar em ambiente de teste (não produção) que o fluxo de "add-to-cart em sequência via iframe" realmente popula o carrinho — ainda não testado ponta a ponta num navegador real contra o site ao vivo, só a API de leitura foi validada.
+- **BLOQUEIO ATIVO — Store API rejeita chamadas de outra origem (CORS/WAF)**: testado direto contra a Vercel publicada em 2026-08-13. `GET /wp-json/wc/store/v1/products` em `modumacc.com.br` funciona (200, JSON completo) em navegação direta ou em `fetch()` disparado do próprio `modumacc.com.br` (mesma origem), mas retorna **503** quando o mesmo `fetch()` é disparado a partir de `modumacc-configurador.vercel.app` (outra origem) — exatamente o caso do app publicado, e por isso o catálogo nunca carrega em produção. **Não é limite de `per_page`** (chute anterior, já descartado — o código ficou em `per_page=50` mas isso não é a causa nem a correção). É bloqueio de CORS/WAF do lado do servidor/hospedagem WordPress, que precisa liberar a origem `https://modumacc-configurador.vercel.app` (e o domínio final, se for outro) pra rota `/wp-json/wc/store/v1/*` — seja habilitando CORS no WordPress (normalmente via plugin ou snippet em `functions.php`, já que o WP core só libera CORS pra chamadas same-site por padrão), seja adicionando uma exceção/allowlist no firewall ou plugin de segurança (Wordfence, Sucuri, etc.), dependendo de onde exatamente está o bloqueio — precisa de quem administra o WordPress/hospedagem do cliente pra investigar e ajustar. **Sem isso resolvido, o app publicado não funciona** — este é o item mais urgente da lista de pendências.
 
 ## Limitações conhecidas do MVP (2D, escopo combinado)
 
