@@ -34,6 +34,9 @@ export function SummaryBar() {
         </p>
         <p className="text-xl font-semibold text-brand-navy-900">{formatBRL(total)}</p>
       </div>
+      <div className="flex items-center gap-3">
+      <AiVisualization />
+      </div>
       <button
         onClick={handleFinish}
         disabled={!canFinish || redirecting}
