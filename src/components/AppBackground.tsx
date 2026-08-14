@@ -16,6 +16,6 @@ export function AppBackground() {
     <div className="bg-blob-b absolute -bottom-20 right-0 h-72 w-72 rounded-full bg-brand-silver-600/20 blur-3xl [animation-duration:38s]" />
 
     <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/30 to-white/60" />
-    </
+    </div>
     );
 }
