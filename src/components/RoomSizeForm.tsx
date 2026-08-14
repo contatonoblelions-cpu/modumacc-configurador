@@ -48,6 +48,7 @@ function handleSubmit(e: FormEvent) {
 
 return (
   <div className="mx-auto flex min-h-[70vh] w-full max-w-md flex-1 flex-col justify-center px-4">
+      <div className="rounded-2xl border border-white/60 bg-white/70 p-8 shadow-xl shadow-brand-navy-900/5 backdrop-blur-xl">
   <h1 className="mb-2 text-2xl font-semibold text-brand-navy-900">Monte sua cozinha</h1>
   <p className="mb-8 text-brand-silver-700">
   Informe as medidas do espaço disponível. Você vai montar a composição
@@ -126,6 +127,7 @@ return (
   Começar a montar
   </button>
   </form>
+      </div>
   </div>
   );
 }
