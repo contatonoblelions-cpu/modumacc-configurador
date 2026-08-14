@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/**
+ * Tokens de marca extraídos da logo real da Modumacc
+ * (Logo Modumacc 2.psd, em Documentos/Clientes/Modumacc/imagens), via
+ * amostragem de pixel do render em alta resolução (2381x1709px).
+ * Navy = cor do ícone/texto "Modu" e do telhado escuro. Silver = cor do
+ * telhado claro e do texto "macc". Ver README > "Identidade visual".
+ */
+@theme {
+  --color-brand-navy-900: #122A41;
+  --color-brand-navy-800: #1A3F61;
+  --color-brand-navy-700: #2E5A79;
+  --color-brand-navy-600: #3D6D8F;
+  --color-brand-silver-700: #6B8285;
+  --color-brand-silver-600: #8CA1A4;
+  --color-brand-silver-400: #B4C2C4;
+  --color-brand-silver-200: #DCE3E4;
+  --color-brand-bg: #F5F7F7;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--color-brand-bg);
+  color: var(--color-brand-navy-900);
+}
