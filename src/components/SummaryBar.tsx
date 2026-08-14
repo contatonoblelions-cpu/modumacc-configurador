@@ -37,7 +37,6 @@ export function SummaryBar() {
       </div>
       <div className="flex items-center gap-3">
       <AiVisualization />
-      </div>
       <button
         onClick={handleFinish}
         disabled={!canFinish || redirecting}
@@ -45,6 +44,7 @@ export function SummaryBar() {
       >
         {redirecting ? 'Enviando pro carrinho...' : 'Adicionar tudo ao carrinho'}
       </button>
+      </div>
     </div>
   );
 }
