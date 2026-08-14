@@ -3,6 +3,7 @@ import { useConfiguratorStore } from '../store/configuratorStore';
 import { checkSpace, totalPriceCents } from '../utils/layout';
 import { formatBRL } from '../api/parseAttributes';
 import { addAllToCartAndRedirect } from '../utils/cartUrl';
+import { AiVisualization } from './AiVisualization';
 
 /** Resumo fixo no rodapé: preço total em tempo real + botão de finalizar. */
 export function SummaryBar() {
