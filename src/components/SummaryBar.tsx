@@ -27,7 +27,7 @@ export function SummaryBar() {
   }
 
   return (
-    <div className="flex items-center justify-between border-t border-brand-silver-200/70 bg-white/80 px-6 py-4 backdrop-blur-md">
+    <div className="flex flex-col gap-3 border-t border-brand-silver-200/70 bg-white/80 px-4 py-3 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
       <div>
         <p className="text-xs text-brand-silver-600">
           {modules.length} {modules.length === 1 ? 'módulo' : 'módulos'}
@@ -35,15 +35,15 @@ export function SummaryBar() {
         </p>
         <p className="text-xl font-semibold text-brand-navy-900">{formatBRL(total)}</p>
       </div>
-      <div className="flex items-center gap-3">
-      <AiVisualization />
-      <button
-        onClick={handleFinish}
-        disabled={!canFinish || redirecting}
-        className="rounded-lg bg-brand-navy-800 px-6 py-3 font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400"
-      >
-        {redirecting ? 'Enviando pro carrinho...' : 'Adicionar tudo ao carrinho'}
-      </button>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <AiVisualization />
+        <button
+          onClick={handleFinish}
+          disabled={!canFinish || redirecting}
+          className="w-full rounded-lg bg-brand-navy-800 px-6 py-3 font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:w-auto"
+        >
+          {redirecting ? 'Enviando pro carrinho...' : 'Adicionar tudo ao carrinho'}
+        </button>
       </div>
     </div>
   );
