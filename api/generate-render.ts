@@ -1,0 +1,156 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+/**
+ * Função serverless (roda na Vercel, não no navegador do cliente) que gera a
+ * visualização "foto do ambiente + móvel escolhido" via Google Gemini
+ * (`gemini-2.5-flash-image`, também chamado "nano banana" — suporta receber
+ * várias imagens de referência + um texto e devolver uma imagem nova).
+ *
+ * POR QUE ISSO PRECISA SER UM BACKEND (e não uma chamada direta do
+ * navegador, como o resto do app): a API do Gemini exige uma chave de API
+ * paga por uso. Se essa chamada fosse feita direto do front-end, a chave
+ * ficaria visível no código-fonte do navegador pra qualquer pessoa copiar e
+ * usar por conta própria (e gerar custo pra nós). Por isso ela mora só aqui,
+ * na variável de ambiente `GEMINI_API_KEY` do projeto na Vercel — ver
+ * README > "Visualização com IA" pra como configurar isso.
+ *
+ * Este endpoint É same-origin com o app (ambos em modumacc-configurador.vercel.app,
+ * ou no domínio final) — diferente da Store API do WooCommerce, aqui não há
+ * nenhum problema de CORS a resolver.
+ */
+
+const GEMINI_MODEL = 'gemini-2.5-flash-image';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+interface RenderModuleInput {
+  name: string;
+  imageUrl: string;
+  widthCm: number;
+  heightCm: number;
+}
+
+interface GenerateRenderBody {
+  roomPhotoBase64: string;
+  roomPhotoMimeType: string;
+  roomWidthCm: number;
+  roomHeightCm: number;
+  finish: string | null;
+  handle: string | null;
+  modules: RenderModuleInput[];
+}
+
+interface InlineImagePart {
+  inlineData: { mimeType: string; data: string };
+}
+
+/**
+ * Busca uma imagem de produto (URL pública em modumacc.com.br) e converte
+ * pra base64 — feito no servidor pra evitar problema de CORS/canvas
+ * "tainted" que teríamos tentando ler os bytes dessas imagens no navegador.
+ */
+async function fetchImageAsBase64(url: string): Promise<InlineImagePart | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const mimeType = res.headers.get('content-type') ?? 'image/jpeg';
+    const buffer = Buffer.from(await res.arrayBuffer());
+    return { inlineData: { mimeType, data: buffer.toString('base64') } };
+  } catch {
+    return null;
+  }
+}
+
+function buildPrompt(body: GenerateRenderBody): string {
+  const lista = body.modules
+  .map((m, i) => `${i + 1}. ${m.name} — largura ${m.widthCm}cm, altura ${m.heightCm}cm`)
+  .join('\n');
+
+return [
+  'Você é um visualizador de ambientes para uma loja de móveis planejados.',
+  'A primeira imagem é uma foto real do ambiente/parede do cliente, tirada por ele.',
+  'As imagens seguintes são fotos de referência dos produtos de marcenaria que o cliente escolheu, na ordem em que devem ficar posicionados lado a lado, da esquerda para a direita, encostados na mesma parede da foto.',
+  '',
+  `Espaço disponível informado pelo cliente: ${body.roomWidthCm}cm de largura por ${body.roomHeightCm}cm de altura.`,
+  body.finish ? `Acabamento/cor escolhido para todos os módulos: ${body.finish}.` : '',
+  body.handle ? `Acabamento do puxador: ${body.handle}.` : '',
+  '',
+  'Módulos, em ordem da esquerda para a direita:',
+  lista,
+  '',
+  'Gere uma imagem fotorrealista mostrando esse ambiente real do cliente com essa composição de móveis já instalada na parede, na escala correta em relação às medidas do espaço, no acabamento e cor indicados. Mantenha o resto do ambiente (parede, piso, iluminação, perspectiva) o mais fiel possível à foto original enviada — só adicione os móveis, não altere o resto do cômodo.',
+  ]
+  .filter(Boolean)
+  .join('\n');
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Método não permitido.' });
+    return;
+  }
+
+const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    res.status(500).json({
+      error:
+        'GEMINI_API_KEY não configurada no projeto da Vercel. Ver README > "Visualização com IA".',
+    });
+    return;
+  }
+
+const body = req.body as GenerateRenderBody;
+  if (!body?.roomPhotoBase64 || !body.modules?.length) {
+    res.status(400).json({ error: 'Faltou a foto do ambiente ou os módulos da composição.' });
+    return;
+  }
+
+try {
+  const productImageParts = (
+    await Promise.all(body.modules.map((m) => fetchImageAsBase64(m.imageUrl)))
+    ).filter((p): p is InlineImagePart => p !== null);
+
+  const parts = [
+    { text: buildPrompt(body) },
+    {
+      inlineData: {
+        mimeType: body.roomPhotoMimeType || 'image/jpeg',
+        data: body.roomPhotoBase64,
+      },
+    },
+    ...productImageParts,
+    ];
+
+  const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts }],
+    }),
+  });
+
+  if (!geminiRes.ok) {
+    const errText = await geminiRes.text();
+    res.status(502).json({ error: `Gemini respondeu ${geminiRes.status}: ${errText.slice(0, 300)}` });
+    return;
+  }
+
+  const data = await geminiRes.json();
+  const imagePart = data?.candidates?.[0]?.content?.parts?.find(
+    (p: { inlineData?: { data?: string } }) => p.inlineData?.data,
+    );
+
+  if (!imagePart?.inlineData?.data) {
+    res.status(502).json({ error: 'O Gemini não devolveu uma imagem. Tente novamente.' });
+    return;
+  }
+
+  res.status(200).json({
+    imageBase64: imagePart.inlineData.data,
+    mimeType: imagePart.inlineData.mimeType ?? 'image/png',
+  });
+} catch (err) {
+  res.status(500).json({
+    error: err instanceof Error ? err.message : 'Erro inesperado gerando a visualização.',
+  });
+}
+}
