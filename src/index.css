@@ -29,3 +29,40 @@ body {
   background: var(--color-brand-bg);
   color: var(--color-brand-navy-900);
 }
+
+/**
+* Fundo decorativo animado (ver components/AppBackground.tsx): manchas de
+* gradiente nos tons da marca (navy/silver) flutuando bem devagar, por trás
+* de uma grade sutil estilo "planta baixa" — remete ao processo de projetar
+* um ambiente, sem competir com o conteúdo (opacidade baixa, sem interação).
+*/
+@keyframes drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(5%, -6%) scale(1.08); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-6%, 5%) scale(1.05); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(4%, 6%) scale(1.1); }
+}
+
+.bg-blob-a { animation: drift-a 26s ease-in-out infinite; }
+.bg-blob-b { animation: drift-b 32s ease-in-out infinite; }
+.bg-blob-c { animation: drift-c 22s ease-in-out infinite; }
+
+.bg-blueprint-grid {
+  background-image:
+    linear-gradient(var(--color-brand-navy-700) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-brand-navy-700) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.045;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-blob-a, .bg-blob-b, .bg-blob-c {
+    animation: none;
+  }
+}
