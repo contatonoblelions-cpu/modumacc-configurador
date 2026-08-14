@@ -27,7 +27,7 @@ export function SummaryBar() {
   }
 
   return (
-    <div className="flex items-center justify-between border-t border-brand-silver-200 bg-white px-6 py-4">
+    <div className="flex items-center justify-between border-t border-brand-silver-200/70 bg-white/80 px-6 py-4 backdrop-blur-md">
       <div>
         <p className="text-xs text-brand-silver-600">
           {modules.length} {modules.length === 1 ? 'módulo' : 'módulos'}
