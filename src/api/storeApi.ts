@@ -111,33 +111,52 @@ export async function fetchKitchenModules(): Promise<CatalogModule[]> {
 const variationCache = new Map<number, ModuleVariation>();
 
 /**
+ * BUG REAL encontrado testando o fluxo de carrinho ao vivo (2026-08-14): o
+ * WooCommerce devolve `add_to_cart.url` com o `&` entre parâmetros já
+ * HTML-escapado como `&#038;` (ele usa a mesma função de escape que usaria
+ * pra ecoar a URL dentro de um `<a href>`, mesmo respondendo JSON). Se
+ * navegamos direto pra essa URL sem decodificar, o navegador lê `#038;...`
+ * como INÍCIO DE FRAGMENTO (`#`), não como separador de query string — então
+ * só o primeiro parâmetro (`attribute_cor=...`) é de fato enviado ao
+ * servidor, e `add-to-cart=<id>` nunca chega lá. O item nunca entra no
+ * carrinho, mas o app não recebe nenhum erro (é só um redirect "bem
+ * sucedido" pra a página do produto). Decodificamos aqui antes de guardar a
+ * URL, na fonte única de verdade — ver `resolveVariation()` abaixo.
+ */
+function decodeHtmlEntities(url: string): string {
+        return url
+          .replace(/&#0?38;/g, '&')
+          .replace(/&amp;/g, '&');
+}
+
+/**
  * Resolve preço + URL de add-to-cart exatos de uma variação específica,
  * buscando `/products/{variationId}` (variações são produtos tipo "variation").
- * A resposta já traz `add_to_cart.url` pronta e corretamente encodada pelo
- * próprio WooCommerce — não remontamos essa URL manualmente (ver utils/cartUrl.ts).
+ * A resposta traz `add_to_cart.url`, mas HTML-escapada (ver `decodeHtmlEntities`
+ * acima) — não remontamos a URL manualmente, só decodificamos os entities.
  */
 export async function resolveVariation(variationId: number): Promise<ModuleVariation> {
-      const cached = variationCache.get(variationId);
-      if (cached && cached.priceCents !== undefined) return cached;
+        const cached = variationCache.get(variationId);
+        if (cached && cached.priceCents !== undefined) return cached;
 
   const v = await fetchJson<WooProduct>(`${STORE_API_BASE}/products/${variationId}`);
-  // A largura NÃO vem confiável em `v.dimensions` (ver nota no tipo WooProduct) —
+          // A largura NÃO vem confiável em `v.dimensions` (ver nota no tipo WooProduct) —
   // extraímos da string `variation`, que traz "Medidas: ...: <largura>,<altura>,<profundidade>".
   const dimsMatch = v.variation?.match(/Medidas:[^:]*:\s*([\d.,]+\s*x\s*[\d.,]+\s*x\s*[\d.,]+)/);
   const dims = dimsMatch ? parseDimensions(dimsMatch[1]) : { widthCm: 0, heightCm: 0, depthCm: 0 };
-
+      
   const resolved: ModuleVariation = {
-          variationId: v.id,
-          parentId: v.parent,
-          finish: v.variation?.match(/Cor:\s*([^,]+)/)?.[1]?.trim() ?? '',
-          handle: v.variation?.match(/Acabamento do puxador:\s*([^,]+)/)?.[1]?.trim() ?? NO_HANDLE_VALUE,
-          widthCm: dims.widthCm,
-          heightCm: dims.heightCm,
-          depthCm: dims.depthCm,
-          priceCents: parsePriceCents(v.prices.price),
-          addToCartUrl: v.add_to_cart.url,
-          inStock: v.is_in_stock,
+            variationId: v.id,
+            parentId: v.parent,
+            finish: v.variation?.match(/Cor:\s*([^,]+)/)?.[1]?.trim() ?? '',
+            handle: v.variation?.match(/Acabamento do puxador:\s*([^,]+)/)?.[1]?.trim() ?? NO_HANDLE_VALUE,
+            widthCm: dims.widthCm,
+            heightCm: dims.heightCm,
+            depthCm: dims.depthCm,
+            priceCents: parsePriceCents(v.prices.price),
+            addToCartUrl: decodeHtmlEntities(v.add_to_cart.url),
+            inStock: v.is_in_stock,
   };
-      variationCache.set(variationId, resolved);
-      return resolved;
+        variationCache.set(variationId, resolved);
+        return resolved;
 }
