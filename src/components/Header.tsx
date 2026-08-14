@@ -1,4 +1,4 @@
-←import { useConfiguratorStore } from '../store/configuratorStore';
+import { useConfiguratorStore } from '../store/configuratorStore';
 
 /**
  * Cabeçalho de marca. Logo real extraída de Logo Modumacc 2.psd
