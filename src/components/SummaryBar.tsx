@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useConfiguratorStore } from '../store/configuratorStore';
-import { checkSpace, totalPriceCents } from '../utils/layout';
+import { hasAnyRowOverflow, totalPriceCents } from '../utils/layout';
 import { formatBRL } from '../api/parseAttributes';
 import { addAllToCartAndRedirect } from '../utils/cartUrl';
 import { AiVisualization } from './AiVisualization';
@@ -12,10 +12,12 @@ export function SummaryBar() {
   const resolving = useConfiguratorStore((s) => s.resolving);
   const [redirecting, setRedirecting] = useState(false);
 
-  const space = checkSpace(room, modules);
   const total = totalPriceCents(modules);
   const allResolved = modules.every((m) => m.resolvedAddToCartUrl);
-  const canFinish = modules.length > 0 && !space.overflow && allResolved && !resolving;
+  // Cada fileira da parede é checada contra a largura do ambiente separadamente
+  // (ver utils/layout.ts) — não dá pra finalizar se alguma fileira estourou.
+  const overflow = hasAnyRowOverflow(room, modules);
+  const canFinish = modules.length > 0 && !overflow && allResolved && !resolving;
 
   async function handleFinish() {
     setRedirecting(true);
