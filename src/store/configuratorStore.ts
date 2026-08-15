@@ -3,6 +3,7 @@ import type { CatalogModule } from '../types/catalog';
 import type { PlacedModule, RoomDimensions } from '../types/composition';
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { buildRenderModules, generateRender } from '../api/generateRender';
+import { inferRowKey } from '../utils/rows';
 
 type Step = 'room' | 'build';
 
@@ -10,7 +11,7 @@ interface RoomPhoto {
   base64: string;
   mimeType: string;
   /** Data URL (`data:image/...;base64,...`) pronta pra usar num <img src>, só pra preview. */
-previewUrl: string;
+  previewUrl: string;
 }
 
 interface AiRenderState {
@@ -23,7 +24,7 @@ interface ConfiguratorState {
   step: Step;
   room: RoomDimensions | null;
   /** Foto do ambiente enviada pelo cliente na tela de medidas — opcional, usada na visualização com IA. */
-roomPhoto: RoomPhoto | null;
+  roomPhoto: RoomPhoto | null;
   catalog: CatalogModule[];
   catalogLoading: boolean;
   catalogError: string | null;
@@ -33,19 +34,20 @@ roomPhoto: RoomPhoto | null;
   resolving: boolean;
   aiRender: AiRenderState;
 
-loadCatalog: () => Promise<void>;
+  loadCatalog: () => Promise<void>;
   setRoom: (room: RoomDimensions) => void;
   setRoomPhoto: (photo: RoomPhoto | null) => void;
   backToRoomStep: () => void;
   addModule: (mod: CatalogModule, widthCm: number) => void;
   removeModule: (instanceId: string) => void;
-  reorderModules: (fromIndex: number, toIndex: number) => void;
+  /** Move um módulo pra esquerda/direita dentro da própria fileira (superior, inferior...). */
+  reorderModules: (instanceId: string, direction: 'left' | 'right') => void;
   setFinish: (finish: string) => void;
   setHandle: (handle: string) => void;
   /** Resolve preço + URL de add-to-cart de cada módulo colocado contra acabamento/puxador atuais. */
-resolveComposition: () => Promise<void>;
+  resolveComposition: () => Promise<void>;
   /** Chama a função serverless que gera a visualização com IA (foto + módulos escolhidos). */
-generateAiRender: () => Promise<void>;
+  generateAiRender: () => Promise<void>;
 }
 
 let instanceCounter = 0;
@@ -98,6 +100,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       widthCm,
       heightCm: mod.heightCm,
       basePriceCents: mod.minPriceCents,
+      row: inferRowKey(mod.name),
     };
     set({ modules: [...get().modules, placed] });
     void get().resolveComposition();
@@ -106,10 +109,25 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   removeModule: (instanceId) =>
     set({ modules: get().modules.filter((m) => m.instanceId !== instanceId) }),
 
-  reorderModules: (fromIndex, toIndex) => {
+  reorderModules: (instanceId, direction) => {
     const modules = [...get().modules];
-    const [moved] = modules.splice(fromIndex, 1);
-    modules.splice(toIndex, 0, moved);
+    const item = modules.find((m) => m.instanceId === instanceId);
+    if (!item) return;
+
+    // Só troca de posição com o vizinho dentro da MESMA fileira — módulos de
+    // fileiras diferentes não se misturam na ordenação (cada fileira é uma
+    // linha independente da parede).
+    const rowGlobalIndices = modules
+      .map((m, i) => ({ m, i }))
+      .filter(({ m }) => m.row === item.row)
+      .map(({ i }) => i);
+    const posInRow = rowGlobalIndices.indexOf(modules.indexOf(item));
+    const swapPos = direction === 'left' ? posInRow - 1 : posInRow + 1;
+    if (swapPos < 0 || swapPos >= rowGlobalIndices.length) return;
+
+    const idxA = rowGlobalIndices[posInRow];
+    const idxB = rowGlobalIndices[swapPos];
+    [modules[idxA], modules[idxB]] = [modules[idxB], modules[idxA]];
     set({ modules });
   },
 
@@ -133,27 +151,27 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           const catalogModule = catalog.find((c) => c.id === placed.moduleId);
           if (!catalogModule) return placed;
 
-                    const match = catalogModule.variations.find(
-                      (v) =>
-                        v.widthCm === placed.widthCm &&
-                        v.finish === (finish ?? v.finish) &&
-                        (catalogModule.hasHandle ? v.handle === (handle ?? v.handle) : true),
-                      );
+          const match = catalogModule.variations.find(
+            (v) =>
+              v.widthCm === placed.widthCm &&
+              v.finish === (finish ?? v.finish) &&
+              (catalogModule.hasHandle ? v.handle === (handle ?? v.handle) : true),
+          );
           if (!match) return placed;
 
-                    try {
-                      const resolved = await resolveVariation(match.variationId);
-                      return {
-                        ...placed,
-                        resolvedVariationId: resolved.variationId,
-                        resolvedPriceCents: resolved.priceCents,
-                        resolvedAddToCartUrl: resolved.addToCartUrl,
-                      };
-                    } catch {
-                      return placed;
-                    }
+          try {
+            const resolved = await resolveVariation(match.variationId);
+            return {
+              ...placed,
+              resolvedVariationId: resolved.variationId,
+              resolvedPriceCents: resolved.priceCents,
+              resolvedAddToCartUrl: resolved.addToCartUrl,
+            };
+          } catch {
+            return placed;
+          }
         }),
-        );
+      );
       set({ modules: updated, resolving: false });
     } catch {
       set({ resolving: false });
@@ -164,7 +182,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     const { roomPhoto, room, modules, finish, handle } = get();
     if (!roomPhoto || !room || modules.length === 0) return;
 
-  set({ aiRender: { loading: true, imageDataUrl: null, error: null } });
+    set({ aiRender: { loading: true, imageDataUrl: null, error: null } });
     try {
       const result = await generateRender({
         roomPhotoBase64: roomPhoto.base64,
