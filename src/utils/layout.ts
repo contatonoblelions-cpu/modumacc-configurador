@@ -1,4 +1,5 @@
 import type { PlacedModule, RoomDimensions } from '../types/composition';
+import { groupByRow } from './rows';
 
 export interface SpaceCheck {
   usedCm: number;
@@ -31,4 +32,14 @@ export function totalPriceCents(modules: PlacedModule[]): number {
     (sum, m) => sum + (m.resolvedPriceCents ?? m.basePriceCents),
     0,
   );
+}
+
+/**
+ * Cada fileira da parede ocupa a largura inteira do ambiente informado —
+ * por isso o "cabe ou não cabe" é checado fileira por fileira, e não
+ * somando a largura de todos os módulos juntos (senão uma parede com
+ * fileira superior + inferior sempre pareceria "estourada").
+ */
+export function hasAnyRowOverflow(room: RoomDimensions | null, modules: PlacedModule[]): boolean {
+  return groupByRow(modules).some((group) => checkSpace(room, group.modules).overflow);
 }
