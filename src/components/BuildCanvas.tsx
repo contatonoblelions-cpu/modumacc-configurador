@@ -5,6 +5,7 @@ import { checkSpace } from '../utils/layout';
 import { ROW_ORDER, ROW_LABELS, inferRowKey } from '../utils/rows';
 import type { RowKey, PlacedModule } from '../types/composition';
 import { formatBRL } from '../api/parseAttributes';
+import { ModuleSchematic } from './ModuleSchematic';
 
 const CANVAS_MAX_PX = 760;
 
@@ -50,7 +51,7 @@ function PlacedModuleBox({ m, i, rowLength, scale, onReorder, onRemove }: Placed
       className={`group relative shrink-0 bg-brand-bg transition ${isDragging ? 'opacity-30' : ''}`}
     >
       <div {...listeners} {...attributes} className="touch-none cursor-grab active:cursor-grabbing">
-        <img src={m.thumbnail} alt={m.moduleName} className="h-32 w-full object-contain" draggable={false} />
+        <ModuleSchematic name={m.moduleName} className="h-32 w-full" />
         <div className="px-1 pb-1 text-center">
           <p className="truncate text-[11px] text-brand-silver-700">{m.moduleName}</p>
           <p className="text-[11px] font-medium text-brand-navy-800">{m.widthCm}cm</p>
