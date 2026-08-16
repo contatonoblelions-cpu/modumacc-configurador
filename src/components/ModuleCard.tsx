@@ -3,6 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import type { CatalogModule } from '../types/catalog';
 import { formatBRL } from '../api/parseAttributes';
 import { useConfiguratorStore } from '../store/configuratorStore';
+import { ModuleSchematic } from './ModuleSchematic';
 
 interface Props {
   module: CatalogModule;
@@ -40,12 +41,7 @@ export function ModuleCard({ module }: Props) {
         className="touch-none cursor-grab active:cursor-grabbing"
         title="Arraste até a parede, na posição que quiser"
       >
-        <img
-          src={module.images[0]?.thumbnail}
-          alt={module.name}
-          className="mb-2 h-24 w-full rounded-lg bg-brand-bg object-contain"
-          draggable={false}
-        />
+        <ModuleSchematic name={module.name} className="mb-2 h-24 w-full rounded-lg" />
         <p className="text-sm font-medium text-brand-navy-800">{module.name}</p>
       </div>
 
