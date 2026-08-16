@@ -3,7 +3,7 @@ import type { CatalogModule } from '../types/catalog';
 import type { PlacedModule, RoomDimensions } from '../types/composition';
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { buildRenderModules, generateRender } from '../api/generateRender';
-import { inferRowKey } from '../utils/rows';
+import { inferRowKey, globalInsertIndex } from '../utils/rows';
 
 type Step = 'room' | 'build';
 
@@ -38,10 +38,18 @@ interface ConfiguratorState {
   setRoom: (room: RoomDimensions) => void;
   setRoomPhoto: (photo: RoomPhoto | null) => void;
   backToRoomStep: () => void;
-  addModule: (mod: CatalogModule, widthCm: number) => void;
+  /**
+   * `insertIndex` é a posição DENTRO da fileira do módulo (não do array
+   * inteiro) — omitido, entra no final da fileira (usado pelo botão
+   * "+ Adicionar" e pelo deep-link); informado, entra exatamente ali
+   * (usado ao soltar um módulo arrastado do catálogo num slot específico).
+   */
+  addModule: (mod: CatalogModule, widthCm: number, insertIndex?: number) => void;
   removeModule: (instanceId: string) => void;
   /** Move um módulo pra esquerda/direita dentro da própria fileira (superior, inferior...). */
   reorderModules: (instanceId: string, direction: 'left' | 'right') => void;
+  /** Reposiciona um módulo já colocado pra um índice específico dentro da própria fileira (arrastar-e-soltar). */
+  moveModule: (instanceId: string, targetIndexInRow: number) => void;
   setFinish: (finish: string) => void;
   setHandle: (handle: string) => void;
   /** Resolve preço + URL de add-to-cart de cada módulo colocado contra acabamento/puxador atuais. */
@@ -91,7 +99,8 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
 
   backToRoomStep: () => set({ step: 'room' }),
 
-  addModule: (mod, widthCm) => {
+  addModule: (mod, widthCm, insertIndex) => {
+    const row = inferRowKey(mod.name);
     const placed: PlacedModule = {
       instanceId: `inst-${++instanceCounter}`,
       moduleId: mod.id,
@@ -100,14 +109,30 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       widthCm,
       heightCm: mod.heightCm,
       basePriceCents: mod.minPriceCents,
-      row: inferRowKey(mod.name),
+      row,
     };
-    set({ modules: [...get().modules, placed] });
+    const modules = [...get().modules];
+    // Sem índice explícito -> vai pro final do array inteiro, o que já
+    // equivale a "final da própria fileira" (o filtro por fileira na hora
+    // de exibir preserva a ordem relativa, e nada vem depois dele).
+    const globalIndex = insertIndex === undefined ? modules.length : globalInsertIndex(modules, row, insertIndex);
+    modules.splice(globalIndex, 0, placed);
+    set({ modules });
     void get().resolveComposition();
   },
 
   removeModule: (instanceId) =>
     set({ modules: get().modules.filter((m) => m.instanceId !== instanceId) }),
+
+  moveModule: (instanceId, targetIndexInRow) => {
+    const modules = [...get().modules];
+    const idx = modules.findIndex((m) => m.instanceId === instanceId);
+    if (idx === -1) return;
+    const [item] = modules.splice(idx, 1);
+    const globalIndex = globalInsertIndex(modules, item.row, targetIndexInRow);
+    modules.splice(globalIndex, 0, item);
+    set({ modules });
+  },
 
   reorderModules: (instanceId, direction) => {
     const modules = [...get().modules];
