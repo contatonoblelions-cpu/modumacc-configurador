@@ -6,7 +6,8 @@ import { useConfiguratorStore } from '../store/configuratorStore';
  */
 export function Header() {
   const step = useConfiguratorStore((s) => s.step);
-  const setStep = useConfiguratorStore((s) => s.backToRoomStep);
+  const backToRoomStep = useConfiguratorStore((s) => s.backToRoomStep);
+  const backToBuildStep = useConfiguratorStore((s) => s.backToBuildStep);
 
   return (
     <header className="flex items-center justify-between border-b border-brand-silver-200/70 bg-white/70 px-6 py-3 backdrop-blur-md">
@@ -18,10 +19,18 @@ export function Header() {
       </div>
       {step === 'build' && (
         <button
-          onClick={setStep}
+          onClick={backToRoomStep}
           className="text-sm font-medium text-brand-navy-700 hover:text-brand-navy-900"
         >
           ← Alterar medidas
+        </button>
+      )}
+      {step === 'review' && (
+        <button
+          onClick={backToBuildStep}
+          className="text-sm font-medium text-brand-navy-700 hover:text-brand-navy-900"
+        >
+          ← Voltar aos módulos
         </button>
       )}
     </header>
