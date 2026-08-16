@@ -5,7 +5,7 @@ import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { buildRenderModules, generateRender } from '../api/generateRender';
 import { inferRowKey, globalInsertIndex } from '../utils/rows';
 
-type Step = 'room' | 'build';
+type Step = 'room' | 'build' | 'review';
 
 interface RoomPhoto {
   base64: string;
@@ -38,6 +38,16 @@ interface ConfiguratorState {
   setRoom: (room: RoomDimensions) => void;
   setRoomPhoto: (photo: RoomPhoto | null) => void;
   backToRoomStep: () => void;
+  /**
+   * "Próximo passo" (usado sobretudo no celular, mas vale pros dois
+   * formatos): sai da tela de montagem (módulos + parede) pra uma tela de
+   * revisão só com a parede montada — ainda editável (dá pra mover e
+   * remover módulo), só sem o painel de catálogo, pra facilitar conferir
+   * tudo antes de ir pro carrinho.
+   */
+  goToReview: () => void;
+  /** Volta da revisão pra tela de montagem (com o painel de módulos de novo). */
+  backToBuildStep: () => void;
   /**
    * `insertIndex` é a posição DENTRO da fileira do módulo (não do array
    * inteiro) — omitido, entra no final da fileira (usado pelo botão
@@ -98,6 +108,10 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   setRoomPhoto: (photo) => set({ roomPhoto: photo }),
 
   backToRoomStep: () => set({ step: 'room' }),
+
+  goToReview: () => set({ step: 'review' }),
+
+  backToBuildStep: () => set({ step: 'build' }),
 
   addModule: (mod, widthCm, insertIndex) => {
     const row = inferRowKey(mod.name);
