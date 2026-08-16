@@ -123,7 +123,7 @@ function App() {
         <Header />
         <FinishHandleSelector />
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-          <ModulePanel />
+          {step === 'build' && <ModulePanel />}
           <BuildCanvas />
         </div>
         <SummaryBar />
