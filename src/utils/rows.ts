@@ -47,3 +47,24 @@ export function groupByRow(
   })).filter((group) => group.modules.length > 0);
 }
 
+/**
+ * Converte um índice de inserção RELATIVO a uma fileira (0 = antes do
+ * primeiro módulo daquela fileira, N = depois do último) num índice GLOBAL
+ * no array flat de módulos — necessário porque módulos de fileiras
+ * diferentes ficam misturados no mesmo array, na ordem em que aparecem
+ * (ver `PlacedModule.row` em `types/composition.ts`).
+ */
+export function globalInsertIndex(
+  modules: PlacedModule[],
+  row: RowKey,
+  indexInRow: number,
+): number {
+  const rowGlobalIndices = modules
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => m.row === row)
+    .map(({ i }) => i);
+  if (rowGlobalIndices.length === 0) return modules.length;
+  const clamped = Math.max(0, Math.min(indexInRow, rowGlobalIndices.length));
+  if (clamped >= rowGlobalIndices.length) return rowGlobalIndices[rowGlobalIndices.length - 1] + 1;
+  return rowGlobalIndices[clamped];
+}
