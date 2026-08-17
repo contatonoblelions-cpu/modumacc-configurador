@@ -6,13 +6,13 @@ export interface RoomDimensions {
 }
 
 /**
- * Fileira da parede em que o módulo entra — decidido automaticamente pelo
- * nome do produto (ver `utils/rows.ts`), pra montagem ficar igual a uma
- * parede de verdade: módulos superiores em cima, inferiores embaixo, etc.
+ * Um módulo colocado na parede — posição TOTALMENTE livre em X e Y, como
+ * montar um projeto 2D peça por peça (igual a ferramentas de planta de
+ * cozinha de verdade): a pessoa decide sozinha onde cada módulo vai, sem
+ * nenhuma categoria ou fileira automática. Só duas regras físicas continuam
+ * valendo (ver `utils/placement.ts`): não pode sair dos limites do espaço
+ * informado, e não pode ficar em cima de outro módulo já colocado.
  */
-export type RowKey = 'superior' | 'torre' | 'geral' | 'inferior';
-
-/** Um módulo colocado na bancada de montagem, numa posição (ordem) específica. */
 export interface PlacedModule {
   /** ID único da instância na composição (não é o ID do produto — o mesmo módulo pode repetir). */
   instanceId: string;
@@ -22,16 +22,10 @@ export interface PlacedModule {
   /** Largura escolhida para essa instância (um módulo pode ter várias larguras disponíveis). */
   widthCm: number;
   heightCm: number;
-  /** Fileira da parede em que esse módulo está (superior, inferior, torre...). */
-  row: RowKey;
-  /**
-   * Posição horizontal LIVRE dentro da própria fileira, em cm a partir da
-   * borda esquerda (0 = encostado na esquerda). Não precisa mais estar
-   * grudado no vizinho — pode ter espaço vazio de qualquer tamanho antes ou
-   * depois. Sempre resolvida (arredondada e sem sobrepor outro módulo da
-   * mesma fileira) por `resolveOffsetCm` em `utils/rows.ts`.
-   */
-  offsetCm: number;
+  /** Posição X livre (cm a partir da borda ESQUERDA do espaço, 0 = encostado na esquerda). */
+  offsetXCm: number;
+  /** Posição Y livre (cm a partir da borda DE CIMA do espaço, 0 = encostado no topo/teto). */
+  offsetYCm: number;
   /** Preço base (sem considerar acabamento específico) usado antes de resolver a variação exata. */
   basePriceCents: number;
   /** Preenchido depois de resolver contra acabamento/puxador globais da composição. */
