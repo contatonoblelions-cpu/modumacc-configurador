@@ -33,7 +33,7 @@ export function ModuleChip({ module }: Props) {
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `catalog-mobile-${module.id}-${widthCm}`,
-    data: { type: 'catalog-module', moduleId: module.id, widthCm },
+    data: { type: 'catalog-module', moduleId: module.id, widthCm, heightCm: module.heightCm },
   });
 
   return (
