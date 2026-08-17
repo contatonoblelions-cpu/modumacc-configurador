@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useDraggable, useDroppable, useDndContext } from '@dnd-kit/core';
 import { useConfiguratorStore } from '../store/configuratorStore';
-import { checkSpace, formatMeters, mobileRowHeightPx } from '../utils/layout';
+import { checkSpace, mobileRowHeightPx } from '../utils/layout';
 import { ROW_ORDER, ROW_LABELS, inferRowKey } from '../utils/rows';
 import type { RowKey, PlacedModule } from '../types/composition';
 import { formatBRL } from '../api/parseAttributes';
@@ -97,37 +97,29 @@ function PlacedModuleBox({ m, scale, onReorder, onRemove }: PlacedModuleBoxProps
   );
 }
 
-interface RowCanvasProps {
+interface RowBandProps {
   row: RowKey;
   rowModules: PlacedModule[];
   scale: number;
-  canvasWidth: number;
-  rowHeightVar: CSSProperties;
   disabled: boolean;
   overflow: boolean;
+  overflowCm: number;
+  isFirst: boolean;
   onReorder: (instanceId: string, direction: 'left' | 'right') => void;
   onRemove: (instanceId: string) => void;
 }
 
 /**
- * A fileira inteira é UM ÚNICO droppable (`row::<fileira>`) — não mais uma
- * sequência de "slots" entre módulos. Isso é o que dá posição livre de
- * verdade: o módulo entra exatamente no X onde o dedo soltou (calculado em
- * `App.tsx` a partir do retângulo do drag), podendo ficar com espaço vazio
- * de qualquer tamanho antes/depois de outro módulo — só não pode ficar por
- * cima de um já colocado (ver `resolveOffsetCm` em `utils/rows.ts`).
+ * Uma "banda" horizontal dentro do quadrante único da parede — cada fileira
+ * (superior, inferior, torre...) continua sendo seu próprio droppable
+ * (`row::<fileira>`) e sua própria checagem de largura, porque isso é a
+ * mesma lógica física que o time de montagem usa depois (não muda). O que
+ * muda é o visual: a banda NÃO tem fundo/borda própria — ela é só uma faixa
+ * transparente dentro do quadrante branco compartilhado (`BuildCanvas`), com
+ * uma linha bem sutil separando de sua vizinha, pra parecer UMA parede só
+ * sendo vista de frente, com o rótulo da fileira discretamente no canto.
  */
-function RowCanvas({
-  row,
-  rowModules,
-  scale,
-  canvasWidth,
-  rowHeightVar,
-  disabled,
-  overflow,
-  onReorder,
-  onRemove,
-}: RowCanvasProps) {
+function RowBand({ row, rowModules, scale, disabled, overflow, overflowCm, isFirst, onReorder, onRemove }: RowBandProps) {
   const { setNodeRef } = useDroppable({ id: `row::${row}`, disabled });
   const dragPreview = useConfiguratorStore((s) => s.dragPreview);
   const showPreview = dragPreview?.row === row;
@@ -135,15 +127,19 @@ function RowCanvas({
   return (
     <div
       ref={setNodeRef}
-      style={{ ...rowHeightVar, maxWidth: canvasWidth }}
-      className={`relative h-[var(--row-h)] w-full overflow-hidden rounded-xl border border-brand-silver-200 bg-white transition md:h-40 md:rounded-lg md:border-2 md:border-dashed ${
-        overflow ? 'md:border-red-400' : disabled ? 'md:border-brand-silver-200 opacity-50' : 'md:border-brand-silver-400'
+      className={`relative h-[var(--row-h)] w-full transition md:h-40 ${isFirst ? '' : 'border-t border-brand-silver-100'} ${
+        overflow ? 'bg-red-50/60' : disabled ? 'opacity-40' : ''
       }`}
     >
-      {rowModules.length === 0 && !showPreview && (
-        <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-[10px] text-brand-silver-400 md:text-xs">
-          + arraste aqui, em qualquer ponto
-        </p>
+      {/* Rótulo discreto da fileira — sem caixa, sem fundo, só uma etiqueta pequena no canto pra orientar sem parecer um campo separado. */}
+      <span className="pointer-events-none absolute left-1.5 top-1 text-[8px] font-semibold uppercase tracking-wide text-brand-silver-400 md:left-2 md:top-1.5 md:text-[10px]">
+        {ROW_LABELS[row]}
+      </span>
+
+      {overflow && (
+        <span className="pointer-events-none absolute right-1.5 top-1 text-[8px] font-medium text-red-500 md:right-2 md:top-1.5 md:text-[10px]">
+          passou {Math.abs(overflowCm)}cm
+        </span>
       )}
 
       {rowModules.map((m) => (
@@ -167,19 +163,19 @@ function RowCanvas({
 }
 
 /**
- * Área de montagem: uma "parede" em 2D dividida em fileiras (superior,
- * inferior, torre/coluna...) — a mesma lógica que o time de montagem usa
- * pra ler o projeto depois.
+ * Área de montagem: agora é UM ÚNICO quadrante branco representando a
+ * parede inteira (largura x altura do ambiente, à escala) — como se a
+ * pessoa estivesse de frente pra parede decidindo onde vai cada módulo, em
+ * vez de várias caixas separadas por fileira.
  *
- * A fileira de cada módulo é sempre a do produto (decidida pelo nome, ver
- * `utils/rows.ts`) — isso não muda. Mas a POSIÇÃO dentro da fileira agora é
- * TOTALMENTE livre: arrasta um módulo do painel (ou um já colocado) e solta
- * em qualquer ponto X da fileira certa, sem precisar encaixar numa sequência
- * — só não sobrepõe outro módulo já ali (ver `resolveOffsetCm`).
- *
- * Fileiras "possíveis" (que têm pelo menos um produto no catálogo, mesmo
- * que ainda vazias na composição) aparecem sempre, pra servir de alvo de
- * soltar — sem isso não teria como começar uma fileira nova.
+ * Por baixo do capô a fileira de cada módulo continua sendo a do produto
+ * (decidida pelo nome, ver `utils/rows.ts`), e a checagem de largura
+ * continua fileira por fileira — isso não muda, é a mesma lógica que o
+ * time de montagem usa pra ler o projeto depois. O que mudou é só o
+ * visual: em vez de uma caixa com borda pra cada fileira, agora é uma
+ * banda transparente dentro do MESMO quadrante (ver `RowBand` acima),
+ * então visualmente parece uma parede só, com os módulos entrando livres
+ * em X dentro da banda certa (sem precisar encaixar numa sequência).
  */
 export function BuildCanvas() {
   const room = useConfiguratorStore((s) => s.room);
@@ -208,9 +204,9 @@ export function BuildCanvas() {
 
   const scale = canvasWidth / room.widthCm;
 
-  // Fileira que está sendo arrastada agora (se houver) — usado pra desabilitar
-  // as OUTRAS fileiras, já que um módulo só pode entrar na fileira do
-  // próprio produto (evita soltar um "Superior" na fileira "Inferior").
+  // Fileira que está sendo arrastada agora (se houver) — usado pra apagar
+  // visualmente as OUTRAS bandas, já que um módulo só pode entrar na
+  // fileira do próprio produto (evita soltar um "Superior" na "Inferior").
   const activeData = active?.data.current as
     | { type: 'catalog-module'; moduleId: number; widthCm: number }
     | { type: 'placed-module'; instanceId: string; row: RowKey; widthCm: number }
@@ -231,19 +227,14 @@ export function BuildCanvas() {
     modules: modules.filter((m) => m.row === row),
   }));
 
-  // Altura (px) de cada fileira no mobile, proporcional à altura real do
-  // ambiente — ver `utils/layout.ts`. Vira uma CSS custom property porque a
-  // classe Tailwind (`h-[var(--row-h)]`) precisa ser um texto estático no
-  // código pra ser detectada em build; só o VALOR muda dinamicamente.
+  // Altura (px) de cada banda, proporcional à altura real do ambiente — ver
+  // `utils/layout.ts`. Vira uma CSS custom property porque a classe
+  // Tailwind (`h-[var(--row-h)]`) precisa ser um texto estático no código
+  // pra ser detectada em build; só o VALOR muda dinamicamente.
   const rowHeightVar = { ['--row-h' as string]: `${mobileRowHeightPx(room.heightCm)}px` } as CSSProperties;
 
   return (
     <div ref={wrapperRef} className="order-1 flex-1 overflow-auto p-3 md:order-none md:p-6">
-      {/*
-        No mobile essa é a "área de montagem" fixa em cima, em escala real —
-        a medida do ambiente já aparece no Header.tsx no mobile, então aqui
-        só repete no desktop (pra não gastar uma linha à toa no celular).
-      */}
       <div className="mb-1.5 md:mb-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-navy-800 md:hidden">
           Área de montagem — escala real (fixa)
@@ -255,59 +246,41 @@ export function BuildCanvas() {
 
       {modules.length === 0 && (
         <p className="mb-2 text-[11px] text-brand-silver-600 md:mb-3 md:text-sm">
-          Arraste um módulo até a fileira certa, em qualquer ponto, pra começar a montar sua parede.
+          Arraste um módulo até a parede, em qualquer ponto, pra começar a montar.
         </p>
       )}
 
-      <div className="flex flex-col gap-1.5 md:gap-4">
-        {rows.map(({ row, modules: rowModules }) => {
+      {/*
+        UM ÚNICO quadrante — a parede inteira. Cada fileira vira uma banda
+        SEM fundo/borda própria (ver `RowBand`), separadas só por uma linha
+        bem sutil, dentro deste container branco compartilhado.
+      */}
+      <div
+        style={{ maxWidth: canvasWidth, ...rowHeightVar }}
+        className="relative w-full overflow-hidden rounded-xl border border-brand-silver-200 bg-white md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
+      >
+        {modules.length === 0 && (
+          <p className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-center text-[10px] text-brand-silver-400 md:text-xs">
+            + arraste aqui, em qualquer ponto da parede
+          </p>
+        )}
+
+        {rows.map(({ row, modules: rowModules }, index) => {
           const space = checkSpace(room, rowModules);
           const rowDisabled = draggingRow !== null && draggingRow !== row;
           return (
-            <div key={row}>
-              {/*
-                O rótulo da fileira ("Módulos superiores", "Outros módulos"...)
-                precisa aparecer também no mobile — sem ele, duas fileiras
-                vizinhas (ex.: Superior com módulo + Geral vazia logo abaixo)
-                viram duas caixas brancas idênticas sem nenhuma pista visual
-                de que são campos DIFERENTES, dando a impressão errada de que
-                é uma única fileira "dividida em duas zonas". No mobile fica
-                compacto (só o nome); no desktop mantém o resumo de uso também.
-              */}
-              <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-brand-silver-500 md:text-xs md:text-brand-silver-700">
-                  {ROW_LABELS[row]}
-                </span>
-                <span className="hidden text-xs text-brand-silver-600 md:inline">
-                  Usado: {formatMeters(space.usedCm)}
-                  {space.hasGap && !space.overflow && (
-                    <span className="ml-2 text-amber-600">· sobram {space.remainingCm}cm</span>
-                  )}
-                  {space.overflow && (
-                    <span className="ml-2 font-medium text-red-600">
-                      · passou {Math.abs(space.remainingCm)}cm da largura informada
-                    </span>
-                  )}
-                </span>
-              </div>
-              {space.overflow && (
-                <p className="mb-0.5 text-[10px] font-medium text-red-600 md:hidden">
-                  {ROW_LABELS[row]}: passou {Math.abs(space.remainingCm)}cm da largura informada
-                </p>
-              )}
-
-              <RowCanvas
-                row={row}
-                rowModules={rowModules}
-                scale={scale}
-                canvasWidth={canvasWidth}
-                rowHeightVar={rowHeightVar}
-                disabled={rowDisabled}
-                overflow={space.overflow}
-                onReorder={reorderModules}
-                onRemove={removeModule}
-              />
-            </div>
+            <RowBand
+              key={row}
+              row={row}
+              rowModules={rowModules}
+              scale={scale}
+              disabled={rowDisabled}
+              overflow={space.overflow}
+              overflowCm={space.remainingCm}
+              isFirst={index === 0}
+              onReorder={reorderModules}
+              onRemove={removeModule}
+            />
           );
         })}
       </div>
