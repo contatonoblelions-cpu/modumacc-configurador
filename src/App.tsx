@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   DndContext,
-  DragOverlay,
   MouseSensor,
   TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
   type DragEndEvent,
-  type DragStartEvent,
+  type DragMoveEvent,
 } from '@dnd-kit/core';
 import { useConfiguratorStore } from './store/configuratorStore';
 import { inferRowKey } from './utils/rows';
@@ -23,23 +22,17 @@ import { SummaryBar } from './components/SummaryBar';
 
 type DragData =
   | { type: 'catalog-module'; moduleId: number; widthCm: number }
-  | { type: 'placed-module'; instanceId: string; row: RowKey };
-
-/** O que mostrar dentro do `DragOverlay` enquanto um módulo está sendo arrastado. */
-interface ActiveDragPreview {
-  name: string;
-  widthCm: number;
-}
+  | { type: 'placed-module'; instanceId: string; row: RowKey; widthCm: number };
 
 function App() {
   const step = useConfiguratorStore((s) => s.step);
+  const room = useConfiguratorStore((s) => s.room);
   const catalog = useConfiguratorStore((s) => s.catalog);
-  const modules = useConfiguratorStore((s) => s.modules);
   const loadCatalog = useConfiguratorStore((s) => s.loadCatalog);
   const addModule = useConfiguratorStore((s) => s.addModule);
   const moveModule = useConfiguratorStore((s) => s.moveModule);
+  const setDragPreview = useConfiguratorStore((s) => s.setDragPreview);
   const autoAddedRef = useRef(false);
-  const [activeDrag, setActiveDrag] = useState<ActiveDragPreview | null>(null);
 
   /**
    * `PointerSensor` sozinho NÃO é confiável em toque real (testado em
@@ -55,14 +48,11 @@ function App() {
    * - Touch: `delay` (200ms) + `tolerance` (8px) — precisa segurar o dedo
    *   parado por um instante antes do drag "pegar"; se a pessoa já começar
    *   a mover o dedo rápido (gesto típico de rolagem), o navegador rola
-   *   normalmente em vez de iniciar o arrasto. Isso é o que resolve de vez
-   *   a ambiguidade "toque = rolar a faixa" vs. "toque = arrastar o módulo".
-   * O resto da confiabilidade em touch vem do `touch-none` (touch-action:
-   * none) aplicado exatamente no elemento que recebe os listeners do
-   * dnd-kit em cada item arrastável (ver `ModuleCard.tsx`, `ModuleChip.tsx`
-   * e `BuildCanvas.tsx`) — sem isso, mesmo com o TouchSensor certo, o
-   * navegador pode iniciar a rolagem nativa antes do JS conseguir
-   * interceptar o gesto.
+   *   normalmente em vez de iniciar o arrasto.
+   * O `touch-action: none` nos itens arrastáveis (ver `ModuleCard.tsx` e
+   * `BuildCanvas.tsx`) reforça isso — EXCETO no `ModuleChip.tsx` da faixa
+   * horizontal, que propositalmente não tem, pra não travar o deslize da
+   * faixa (ver comentário lá).
    */
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -106,66 +96,82 @@ function App() {
   }, [step, catalog, addModule]);
 
   /**
-   * Guarda nome + largura do módulo sendo arrastado agora (do catálogo ou
-   * já colocado na parede) pra alimentar o `DragOverlay` abaixo — é esse
-   * card flutuante que dá a sensação de "arrastar de verdade", seguindo o
-   * dedo/mouse em tempo real por cima de qualquer scroll ou breakpoint,
-   * sem precisar calcular transform manualmente pra cada contêiner.
+   * Calcula em que fileira e em que X (cm) o módulo ficaria SE fosse solto
+   * agora — usado tanto pra desenhar o indicador "fantasma" em tempo real
+   * (`onDragMove`) quanto pra decidir a posição final (`onDragEnd`).
+   *
+   * A matemática: `active.rect.current.translated` é o retângulo do item
+   * sendo arrastado (o elemento ORIGINAL, não o `DragOverlay`) já somado
+   * ao deslocamento do dedo/mouse — o dnd-kit calcula isso sozinho, não
+   * precisamos aplicar transform manualmente em nada. Pegamos o CENTRO
+   * desse retângulo, subtraímos a borda esquerda da fileira (`over.rect`)
+   * pra virar um X relativo à fileira, e convertemos de pixel pra cm usando
+   * a escala real da fileira (`over.rect.width / room.widthCm` — a fileira
+   * sempre ocupa a largura toda do ambiente informado). Por fim subtraímos
+   * metade da largura do módulo, porque queremos a borda ESQUERDA dele (o
+   * que a store espera), não o centro.
    */
-  function handleDragStart(event: DragStartEvent) {
+  function computeDropTarget(
+    event: DragMoveEvent | DragEndEvent,
+  ): { row: RowKey; offsetCm: number; widthCm: number } | null {
+    const { active, over } = event;
+    if (!over || !room) return null;
+
+    const match = /^row::(.+)$/.exec(String(over.id));
+    if (!match) return null;
+    const row = match[1] as RowKey;
+
+    const data = active.data.current as DragData | undefined;
+    if (!data) return null;
+
+    // A fileira de destino tem que ser a mesma do produto — não dá pra
+    // soltar um "Superior" na fileira "Inferior" (ver `BuildCanvas.tsx`,
+    // que já desabilita o droppable das fileiras erradas, isso aqui é só
+    // uma segunda trava de segurança).
+    if (data.type === 'catalog-module') {
+      const mod = catalog.find((m) => m.id === data.moduleId);
+      if (!mod || inferRowKey(mod.name) !== row) return null;
+    } else if (data.row !== row) {
+      return null;
+    }
+
+    const translated = active.rect.current.translated;
+    if (!translated || !over.rect.width) return null;
+
+    const widthCm = data.widthCm;
+    const scale = over.rect.width / room.widthCm;
+    const centerX = translated.left + translated.width / 2;
+    const relativeX = centerX - over.rect.left;
+    const offsetCm = relativeX / scale - widthCm / 2;
+
+    return { row, offsetCm, widthCm };
+  }
+
+  /** Atualiza o indicador "fantasma" a cada movimento — dá o feedback em tempo real de onde o módulo vai encaixar. */
+  function handleDragMove(event: DragMoveEvent) {
+    const target = computeDropTarget(event);
+    setDragPreview(target);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setDragPreview(null);
+    const target = computeDropTarget(event);
+    if (!target) return;
+
     const data = event.active.data.current as DragData | undefined;
     if (!data) return;
 
     if (data.type === 'catalog-module') {
       const mod = catalog.find((m) => m.id === data.moduleId);
-      if (mod) setActiveDrag({ name: mod.name, widthCm: data.widthCm });
-    } else if (data.type === 'placed-module') {
-      const placed = modules.find((m) => m.instanceId === data.instanceId);
-      if (placed) setActiveDrag({ name: placed.moduleName, widthCm: placed.widthCm });
-    }
-  }
-
-  /**
-   * Um "slot" é uma zona fina de soltar entre dois módulos (ou nas pontas)
-   * de uma fileira específica, com id no formato `slot::<fileira>::<índice>`
-   * (ver `BuildCanvas.tsx` > `InsertSlot`). Isso é o que dá a sensação de
-   * posição livre: em vez de só poder jogar no final, dá pra soltar em
-   * qualquer posição dentro da fileira — o `closestCenter` (ver `DndContext`
-   * abaixo) já escolhe sozinho o slot mais próreo de onde o dedo soltou,
-   * mesmo que o toque não esteja exatamente em cima dele.
-   *
-   * A fileira em si NUNCA muda por causa de onde foi solto — é sempre a do
-   * produto (ver `inferRowKey`). Por segurança, se por algum motivo o slot
-   * for de outra fileira (não deveria acontecer, já que esses slots ficam
-   * desabilitados durante o arrasto — ver `BuildCanvas.tsx`), o drop é
-   * ignorado.
-   */
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveDrag(null);
-    const { active, over } = event;
-    if (!over) return;
-
-    const match = /^slot::(.+)::(\d+)$/.exec(String(over.id));
-    if (!match) return;
-    const targetRow = match[1] as RowKey;
-    const targetIndex = Number(match[2]);
-
-    const data = active.data.current as DragData | undefined;
-    if (!data) return;
-
-    if (data.type === 'catalog-module') {
-      const mod = catalog.find((m) => m.id === data.moduleId);
       if (!mod) return;
-      if (inferRowKey(mod.name) !== targetRow) return;
-      addModule(mod, data.widthCm, targetIndex);
-    } else if (data.type === 'placed-module') {
-      if (data.row !== targetRow) return;
-      moveModule(data.instanceId, targetIndex);
+      addModule(mod, data.widthCm, target.offsetCm);
+    } else {
+      moveModule(data.instanceId, target.offsetCm);
     }
   }
 
   function handleDragCancel() {
-    setActiveDrag(null);
+    setDragPreview(null);
   }
 
   if (step === 'room') {
@@ -184,7 +190,7 @@ function App() {
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
@@ -207,24 +213,12 @@ function App() {
       </div>
 
       {/*
-        Card flutuante que segue o dedo/mouse durante o arrasto — sem isso o
-        módulo "sumia" da faixa/parede sem nenhum indício visual de que
-        estava sendo movido, o que fazia o recurso parecer quebrado (o drop
-        funcionava por baixo dos panos, mas ninguém via o arrasto
-        acontecendo). Estilo único (chip escuro) pros dois casos — catálogo
-        e reposicionar já colocado — e pros dois breakpoints, já que aqui
-        não faz diferença visual estar no mobile ou desktop.
+        Não usamos mais `DragOverlay` com preview do módulo aqui: agora o
+        feedback em tempo real é o indicador "fantasma" desenhado dentro da
+        própria fileira (`BuildCanvas.tsx` > `RowCanvas`), que já mostra
+        exatamente onde e do tamanho que o módulo vai encaixar — muito mais
+        direto que um card flutuante genérico seguindo o dedo.
       */}
-      <DragOverlay dropAnimation={{ duration: 150, easing: 'ease-out' }}>
-        {activeDrag ? (
-          <div className="pointer-events-none flex h-[72px] w-[76px] flex-col items-center justify-center gap-0.5 rounded-lg bg-brand-navy-800 px-1.5 text-center text-white shadow-lg">
-            <span className="line-clamp-2 text-[11px] font-medium leading-tight">
-              {activeDrag.name}
-            </span>
-            <span className="text-[10px] text-brand-silver-300">{activeDrag.widthCm}cm</span>
-          </div>
-        ) : null}
-      </DragOverlay>
     </DndContext>
   );
 }
