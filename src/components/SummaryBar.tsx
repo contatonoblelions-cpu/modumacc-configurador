@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useConfiguratorStore } from '../store/configuratorStore';
-import { hasAnyRowOverflow, totalPriceCents } from '../utils/layout';
+import { hasAnyRowOverflow, totalPriceCents, formatMeters } from '../utils/layout';
 import { formatBRL } from '../api/parseAttributes';
 import { addAllToCartAndRedirect } from '../utils/cartUrl';
 import { AiVisualization } from './AiVisualization';
@@ -20,6 +20,10 @@ export function SummaryBar() {
   const [redirecting, setRedirecting] = useState(false);
 
   const total = totalPriceCents(modules);
+  // Soma bruta de todos os módulos, ignorando fileira — é só um resumo
+  // informativo pro mobile (ver mockup: "2,30m de 3,00m ocupados"), a regra
+  // que realmente bloqueia continua sendo por fileira (hasAnyRowOverflow).
+  const usedCmTotal = modules.reduce((sum, m) => sum + m.widthCm, 0);
   const allResolved = modules.every((m) => m.resolvedAddToCartUrl);
   // Cada fileira da parede é checada contra a largura do ambiente separadamente
   // (ver utils/layout.ts) — não dá pra prosseguir nem finalizar se alguma
@@ -45,6 +49,11 @@ export function SummaryBar() {
           {resolving && ' · atualizando preços...'}
         </p>
         <p className="text-xl font-semibold text-brand-navy-900">{formatBRL(total)}</p>
+        {room && step !== 'room' && (
+          <p className="text-[11px] text-brand-silver-500 md:hidden">
+            {formatMeters(usedCmTotal)} de {formatMeters(room.widthCm)} ocupados
+          </p>
+        )}
       </div>
       {step === 'build' ? (
         <button
