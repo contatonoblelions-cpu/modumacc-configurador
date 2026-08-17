@@ -1,11 +1,10 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useDraggable, useDroppable, useDndContext } from '@dnd-kit/core';
 import { useConfiguratorStore } from '../store/configuratorStore';
-import { checkSpace } from '../utils/layout';
+import { checkSpace, formatMeters, mobileRowHeightPx } from '../utils/layout';
 import { ROW_ORDER, ROW_LABELS, inferRowKey } from '../utils/rows';
 import type { RowKey, PlacedModule } from '../types/composition';
 import { formatBRL } from '../api/parseAttributes';
-import { formatMeters } from '../utils/layout';
 import { ModuleSchematic } from './ModuleSchematic';
 
 const CANVAS_MAX_PX = 760;
@@ -49,7 +48,7 @@ function InsertSlot({
     return (
       <div
         ref={setNodeRef}
-        className={`flex h-24 w-16 shrink-0 items-center justify-center self-stretch rounded-lg border-2 border-dashed text-center text-[10px] leading-tight transition-all md:h-auto md:rounded md:border-0 ${desktopWidth} ${tone}`}
+        className={`flex w-11 shrink-0 items-center justify-center self-stretch rounded-md border border-dashed text-center text-[9px] leading-tight transition-all md:h-auto md:w-auto md:rounded md:border-0 ${desktopWidth} ${tone}`}
       >
         <span className="md:hidden">+ arraste aqui</span>
       </div>
@@ -86,29 +85,47 @@ function PlacedModuleBox({ m, i, rowLength, scale, onReorder, onRemove }: Placed
     <div
       ref={setNodeRef}
       style={{ width: m.widthCm * scale }}
-      className={`group relative shrink-0 bg-brand-bg transition ${isDragging ? 'opacity-30' : ''}`}
+      className={`group relative h-full min-w-14 shrink-0 bg-brand-bg transition md:h-auto md:min-w-0 ${isDragging ? 'opacity-30' : ''}`}
     >
-      <div {...listeners} {...attributes} className="touch-none cursor-grab active:cursor-grabbing">
-        <ModuleSchematic name={m.moduleName} className="h-20 w-full md:h-32" />
-        <div className="px-1 pb-1 text-center">
-          <p className="truncate text-[10px] text-brand-silver-700 md:text-[11px]">{m.moduleName}</p>
-          <p className="text-[10px] font-medium text-brand-navy-800 md:text-[11px]">{m.widthCm}cm</p>
-          <p className="hidden text-[11px] text-brand-silver-600 md:block">
-            {formatBRL(m.resolvedPriceCents ?? m.basePriceCents)}
-          </p>
+      <div
+        {...listeners}
+        {...attributes}
+        className="h-full touch-none cursor-grab active:cursor-grabbing md:h-auto"
+      >
+        {/*
+          Mobile: caixa de texto simples (nome + largura), sem desenho — bate
+          com o mockup de referência e cabe na fileira compacta. Desktop:
+          mantém o esquema em SVG (ver `ModuleSchematic.tsx`), sem mudança.
+        */}
+        <div className="flex h-full flex-col items-center justify-center gap-0.5 rounded-md border border-brand-silver-300 bg-white px-1 text-center md:hidden">
+          <span className="line-clamp-2 text-[10px] font-medium leading-tight text-brand-navy-800">
+            {m.moduleName}
+          </span>
+          <span className="text-[9px] text-brand-silver-600">{m.widthCm}cm</span>
+        </div>
+        <div className="hidden md:block">
+          <ModuleSchematic name={m.moduleName} className="h-32 w-full" />
+          <div className="px-1 pb-1 text-center">
+            <p className="truncate text-[11px] text-brand-silver-700">{m.moduleName}</p>
+            <p className="text-[11px] font-medium text-brand-navy-800">{m.widthCm}cm</p>
+            <p className="text-[11px] text-brand-silver-600">
+              {formatBRL(m.resolvedPriceCents ?? m.basePriceCents)}
+            </p>
+          </div>
         </div>
       </div>
       {/*
-        Sempre visíveis no celular (não existe "hover" no toque), e some
-        suavemente no desktop até passar o mouse por cima. As setas ainda
-        servem pra ajuste fino, além de arrastar.
+        No mobile só o X de remover fica visível (pequeno, no canto), pra
+        não pesar o chip — as setas ←/→ continuam só no desktop, já que
+        arrastar já cobre a reordenação. No desktop tudo some suavemente até
+        passar o mouse por cima, igual antes.
       */}
-      <div className="absolute right-1 top-1 flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+      <div className="absolute right-0.5 top-0.5 flex gap-1 opacity-100 transition-opacity md:right-1 md:top-1 md:opacity-0 md:group-hover:opacity-100">
         {i > 0 && (
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onReorder(m.instanceId, 'left')}
-            className="flex h-7 w-7 items-center justify-center rounded bg-white/95 text-sm shadow"
+            className="hidden h-7 w-7 items-center justify-center rounded bg-white/95 text-sm shadow md:flex"
             title="Mover pra esquerda"
           >
             ←
@@ -118,7 +135,7 @@ function PlacedModuleBox({ m, i, rowLength, scale, onReorder, onRemove }: Placed
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onReorder(m.instanceId, 'right')}
-            className="flex h-7 w-7 items-center justify-center rounded bg-white/95 text-sm shadow"
+            className="hidden h-7 w-7 items-center justify-center rounded bg-white/95 text-sm shadow md:flex"
             title="Mover pra direita"
           >
             →
@@ -127,7 +144,7 @@ function PlacedModuleBox({ m, i, rowLength, scale, onReorder, onRemove }: Placed
         <button
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => onRemove(m.instanceId)}
-          className="flex h-7 w-7 items-center justify-center rounded bg-white/95 text-sm text-red-600 shadow"
+          className="flex h-4 w-4 items-center justify-center rounded-full bg-white/95 text-[9px] text-red-600 shadow md:h-7 md:w-7 md:text-sm"
           title="Remover"
         >
           ✕
@@ -204,6 +221,12 @@ export function BuildCanvas() {
     modules: modules.filter((m) => m.row === row),
   }));
 
+  // Altura (px) de cada fileira no mobile, proporcional à altura real do
+  // ambiente — ver `utils/layout.ts`. Vira uma CSS custom property porque a
+  // classe Tailwind (`h-[var(--row-h)]`) precisa ser um texto estático no
+  // código pra ser detectada em build; só o VALOR muda dinamicamente.
+  const rowHeightVar = { ['--row-h' as string]: `${mobileRowHeightPx(room.heightCm)}px` } as CSSProperties;
+
   return (
     <div
       ref={wrapperRef}
@@ -211,79 +234,96 @@ export function BuildCanvas() {
     >
       {/*
         No mobile essa é a "área de montagem" fixa em cima, em escala real —
-        no desktop essa legenda simples já basta (a medida também aparece no
-        Header.tsx no mobile).
+        a medida do ambiente já aparece no Header.tsx no mobile, então aqui
+        só repete no desktop (pra não gastar uma linha à toa no celular).
       */}
-      <div className="mb-2 md:mb-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-silver-500 md:hidden">
+      <div className="mb-1.5 md:mb-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-navy-800 md:hidden">
           Área de montagem — escala real (fixa)
         </p>
-        <p className="text-sm text-brand-silver-700">
+        <p className="hidden text-sm text-brand-silver-700 md:block">
           Espaço: {room.widthCm}cm × {room.heightCm}cm
         </p>
       </div>
 
       {modules.length === 0 && (
-        <p className="mb-3 text-sm text-brand-silver-600">
-          Arraste um módulo até a fileira certa (ou toque em "+ Adicionar" no painel) pra começar a montar sua parede.
+        <p className="mb-2 text-[11px] text-brand-silver-600 md:mb-3 md:text-sm">
+          Arraste um módulo até a fileira certa (ou toque nele) pra começar a montar sua parede.
         </p>
       )}
 
-      <div className="flex flex-col gap-2 md:gap-4">
-        {rows.map(({ row, modules: rowModules }) => {
-          const space = checkSpace(room, rowModules);
-          const rowDisabled = draggingRow !== null && draggingRow !== row;
-          return (
-            <div key={row}>
-              <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-silver-700 md:text-xs">
-                  {ROW_LABELS[row]}
-                </span>
-                <span className="text-[11px] text-brand-silver-600 md:text-xs">
-                  Usado: {formatMeters(space.usedCm)}
-                  {space.hasGap && !space.overflow && (
-                    <span className="ml-2 text-amber-600">· sobram {space.remainingCm}cm</span>
-                  )}
-                  {space.overflow && (
-                    <span className="ml-2 font-medium text-red-600">
-                      · passou {Math.abs(space.remainingCm)}cm da largura informada
-                    </span>
-                  )}
-                </span>
-              </div>
+      {/*
+        No mobile, um único cartão compacto envolve todas as fileiras (sem
+        rótulo/medida por fileira — só o essencial pra economizar altura,
+        ver aviso de estouro abaixo). No desktop esse wrapper é transparente
+        e cada fileira mantém sua própria caixa tracejada, igual antes.
+      */}
+      <div className="rounded-xl border border-brand-silver-300 bg-white p-2 md:rounded-none md:border-0 md:bg-transparent md:p-0">
+        <div className="flex flex-col gap-1 md:gap-4">
+          {rows.map(({ row, modules: rowModules }) => {
+            const space = checkSpace(room, rowModules);
+            const rowDisabled = draggingRow !== null && draggingRow !== row;
+            return (
+              <div key={row}>
+                <div className="mb-1 hidden flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 md:flex">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-brand-silver-700">
+                    {ROW_LABELS[row]}
+                  </span>
+                  <span className="text-xs text-brand-silver-600">
+                    Usado: {formatMeters(space.usedCm)}
+                    {space.hasGap && !space.overflow && (
+                      <span className="ml-2 text-amber-600">· sobram {space.remainingCm}cm</span>
+                    )}
+                    {space.overflow && (
+                      <span className="ml-2 font-medium text-red-600">
+                        · passou {Math.abs(space.remainingCm)}cm da largura informada
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {space.overflow && (
+                  <p className="mb-0.5 text-[10px] font-medium text-red-600 md:hidden">
+                    {ROW_LABELS[row]}: passou {Math.abs(space.remainingCm)}cm da largura informada
+                  </p>
+                )}
 
-              <div
-                style={{ width: canvasWidth }}
-                className={`flex min-h-20 items-end gap-0 overflow-x-auto rounded-lg border-2 border-dashed bg-white p-1.5 transition md:min-h-32 md:overflow-visible md:p-2 ${
-                  space.overflow ? 'border-red-400' : rowDisabled ? 'border-brand-silver-200' : 'border-brand-silver-400'
-                } ${rowDisabled ? 'opacity-50' : ''}`}
-              >
-                <InsertSlot
-                  id={`slot::${row}::0`}
-                  disabled={rowDisabled}
-                  trailingLabel={rowModules.length === 0}
-                />
-                {rowModules.map((m, i) => (
-                  <Fragment key={m.instanceId}>
-                    <PlacedModuleBox
-                      m={m}
-                      i={i}
-                      rowLength={rowModules.length}
-                      scale={scale}
-                      onReorder={reorderModules}
-                      onRemove={removeModule}
-                    />
-                    <InsertSlot
-                      id={`slot::${row}::${i + 1}`}
-                      disabled={rowDisabled}
-                      trailingLabel={i === rowModules.length - 1}
-                    />
-                  </Fragment>
-                ))}
+                <div
+                  style={{ ...rowHeightVar, maxWidth: canvasWidth }}
+                  className={`flex h-[var(--row-h)] w-full items-stretch gap-1 overflow-hidden p-0 transition md:h-auto md:min-h-32 md:items-end md:gap-0 md:overflow-visible md:rounded-lg md:border-2 md:border-dashed md:bg-white md:p-2 ${
+                    space.overflow
+                      ? 'md:border-red-400'
+                      : rowDisabled
+                        ? 'md:border-brand-silver-200'
+                        : 'md:border-brand-silver-400'
+                  } ${rowDisabled ? 'opacity-50' : ''}`}
+                >
+                  <InsertSlot
+                    id={`slot::${row}::0`}
+                    disabled={rowDisabled}
+                    trailingLabel={rowModules.length === 0}
+                  />
+                  {rowModules.map((m, i) => (
+                    <Fragment key={m.instanceId}>
+                      <PlacedModuleBox
+                        m={m}
+                        i={i}
+                        rowLength={rowModules.length}
+                        scale={scale}
+                        onReorder={reorderModules}
+                        onRemove={removeModule}
+                      />
+                      <InsertSlot
+                        id={`slot::${row}::${i + 1}`}
+                        disabled={rowDisabled}
+                        trailingLabel={i === rowModules.length - 1}
+                      />
+                    </Fragment>
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
