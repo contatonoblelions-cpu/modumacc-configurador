@@ -48,7 +48,7 @@ function InsertSlot({
     return (
       <div
         ref={setNodeRef}
-        className={`flex w-11 shrink-0 items-center justify-center self-stretch rounded-md border border-dashed text-center text-[9px] leading-tight transition-all md:h-auto md:w-auto md:rounded md:border-0 ${desktopWidth} ${tone}`}
+        className={`flex w-11 shrink-0 items-center justify-center self-stretch rounded-md border border-dashed text-center text-[9px] leading-tight transition-all md:h-auto md:rounded md:border-0 ${desktopWidth} ${tone}`}
       >
         <span className="md:hidden">+ arraste aqui</span>
       </div>
