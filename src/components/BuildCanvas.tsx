@@ -5,6 +5,7 @@ import { checkSpace } from '../utils/layout';
 import { ROW_ORDER, ROW_LABELS, inferRowKey } from '../utils/rows';
 import type { RowKey, PlacedModule } from '../types/composition';
 import { formatBRL } from '../api/parseAttributes';
+import { formatMeters } from '../utils/layout';
 import { ModuleSchematic } from './ModuleSchematic';
 
 const CANVAS_MAX_PX = 760;
@@ -16,8 +17,45 @@ const CANVAS_MAX_PX = 760;
  * quaisquer. Alarga e destaca quando algo compatível está sendo arrastado
  * por cima (ver `isOver`).
  */
-function InsertSlot({ id, disabled }: { id: string; disabled: boolean }) {
+function InsertSlot({
+  id,
+  disabled,
+  trailingLabel,
+}: {
+  id: string;
+  disabled: boolean;
+  /**
+   * Só o último slot de cada fileira recebe isso — no mobile ele vira uma
+   * caixa tracejada "+ arraste aqui" (em vez da barrinha fina normal),
+   * igual ao mockup, pra deixar claro onde soltar. No desktop continua
+   * sendo a barrinha discreta de sempre.
+   */
+  trailingLabel?: boolean;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id, disabled });
+
+  // No mobile, o último slot de cada fileira vira uma caixa tracejada
+  // "+ arraste aqui" (igual ao mockup) em vez da barrinha fina — mais fácil
+  // de mirar no toque e deixa claro onde soltar. No desktop continua sendo
+  // a barrinha discreta de sempre (mesmo elemento, só muda via classes
+  // responsivas, já que o `useDroppable` só aceita um nó por slot).
+  if (trailingLabel) {
+    const desktopWidth = isOver ? 'md:w-9' : disabled ? 'md:w-1' : 'md:w-2.5';
+    const tone = isOver
+      ? 'border-brand-navy-400 bg-brand-navy-100 text-brand-navy-700'
+      : disabled
+        ? 'border-brand-silver-200 text-brand-silver-300'
+        : 'border-brand-silver-400 text-brand-silver-500';
+    return (
+      <div
+        ref={setNodeRef}
+        className={`flex h-24 w-16 shrink-0 items-center justify-center self-stretch rounded-lg border-2 border-dashed text-center text-[10px] leading-tight transition-all md:h-auto md:rounded md:border-0 ${desktopWidth} ${tone}`}
+      >
+        <span className="md:hidden">+ arraste aqui</span>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -51,11 +89,11 @@ function PlacedModuleBox({ m, i, rowLength, scale, onReorder, onRemove }: Placed
       className={`group relative shrink-0 bg-brand-bg transition ${isDragging ? 'opacity-30' : ''}`}
     >
       <div {...listeners} {...attributes} className="touch-none cursor-grab active:cursor-grabbing">
-        <ModuleSchematic name={m.moduleName} className="h-32 w-full" />
+        <ModuleSchematic name={m.moduleName} className="h-20 w-full md:h-32" />
         <div className="px-1 pb-1 text-center">
-          <p className="truncate text-[11px] text-brand-silver-700">{m.moduleName}</p>
-          <p className="text-[11px] font-medium text-brand-navy-800">{m.widthCm}cm</p>
-          <p className="text-[11px] text-brand-silver-600">
+          <p className="truncate text-[10px] text-brand-silver-700 md:text-[11px]">{m.moduleName}</p>
+          <p className="text-[10px] font-medium text-brand-navy-800 md:text-[11px]">{m.widthCm}cm</p>
+          <p className="hidden text-[11px] text-brand-silver-600 md:block">
             {formatBRL(m.resolvedPriceCents ?? m.basePriceCents)}
           </p>
         </div>
@@ -167,9 +205,22 @@ export function BuildCanvas() {
   }));
 
   return (
-    <div ref={wrapperRef} className="flex-1 overflow-auto p-4 md:p-6">
-      <div className="mb-3 text-sm text-brand-silver-700">
-        Espaço: {room.widthCm}cm × {room.heightCm}cm
+    <div
+      ref={wrapperRef}
+      className="order-1 flex-1 overflow-auto p-3 md:order-none md:p-6"
+    >
+      {/*
+        No mobile essa é a "área de montagem" fixa em cima, em escala real —
+        no desktop essa legenda simples já basta (a medida também aparece no
+        Header.tsx no mobile).
+      */}
+      <div className="mb-2 md:mb-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-silver-500 md:hidden">
+          Área de montagem — escala real (fixa)
+        </p>
+        <p className="text-sm text-brand-silver-700">
+          Espaço: {room.widthCm}cm × {room.heightCm}cm
+        </p>
       </div>
 
       {modules.length === 0 && (
@@ -178,18 +229,18 @@ export function BuildCanvas() {
         </p>
       )}
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 md:gap-4">
         {rows.map(({ row, modules: rowModules }) => {
           const space = checkSpace(room, rowModules);
           const rowDisabled = draggingRow !== null && draggingRow !== row;
           return (
             <div key={row}>
               <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <span className="text-xs font-semibold uppercase tracking-wide text-brand-silver-700">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-silver-700 md:text-xs">
                   {ROW_LABELS[row]}
                 </span>
-                <span className="text-xs text-brand-silver-600">
-                  Usado: {space.usedCm}cm
+                <span className="text-[11px] text-brand-silver-600 md:text-xs">
+                  Usado: {formatMeters(space.usedCm)}
                   {space.hasGap && !space.overflow && (
                     <span className="ml-2 text-amber-600">· sobram {space.remainingCm}cm</span>
                   )}
@@ -203,11 +254,15 @@ export function BuildCanvas() {
 
               <div
                 style={{ width: canvasWidth }}
-                className={`flex min-h-32 items-end gap-0 rounded-lg border-2 border-dashed bg-white p-2 transition ${
+                className={`flex min-h-20 items-end gap-0 overflow-x-auto rounded-lg border-2 border-dashed bg-white p-1.5 transition md:min-h-32 md:overflow-visible md:p-2 ${
                   space.overflow ? 'border-red-400' : rowDisabled ? 'border-brand-silver-200' : 'border-brand-silver-400'
                 } ${rowDisabled ? 'opacity-50' : ''}`}
               >
-                <InsertSlot id={`slot::${row}::0`} disabled={rowDisabled} />
+                <InsertSlot
+                  id={`slot::${row}::0`}
+                  disabled={rowDisabled}
+                  trailingLabel={rowModules.length === 0}
+                />
                 {rowModules.map((m, i) => (
                   <Fragment key={m.instanceId}>
                     <PlacedModuleBox
@@ -218,7 +273,11 @@ export function BuildCanvas() {
                       onReorder={reorderModules}
                       onRemove={removeModule}
                     />
-                    <InsertSlot id={`slot::${row}::${i + 1}`} disabled={rowDisabled} />
+                    <InsertSlot
+                      id={`slot::${row}::${i + 1}`}
+                      disabled={rowDisabled}
+                      trailingLabel={i === rowModules.length - 1}
+                    />
                   </Fragment>
                 ))}
               </div>
