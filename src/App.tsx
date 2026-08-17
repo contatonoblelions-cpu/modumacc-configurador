@@ -10,8 +10,7 @@ import {
   type DragMoveEvent,
 } from '@dnd-kit/core';
 import { useConfiguratorStore } from './store/configuratorStore';
-import { inferRowKey } from './utils/rows';
-import type { RowKey } from './types/composition';
+import { WALL_DROPPABLE_ID } from './components/BuildCanvas';
 import { AppBackground } from './components/AppBackground';
 import { Header } from './components/Header';
 import { RoomSizeForm } from './components/RoomSizeForm';
@@ -21,8 +20,8 @@ import { FinishHandleSelector } from './components/FinishHandleSelector';
 import { SummaryBar } from './components/SummaryBar';
 
 type DragData =
-  | { type: 'catalog-module'; moduleId: number; widthCm: number }
-  | { type: 'placed-module'; instanceId: string; row: RowKey; widthCm: number };
+  | { type: 'catalog-module'; moduleId: number; widthCm: number; heightCm: number }
+  | { type: 'placed-module'; instanceId: string; widthCm: number; heightCm: number };
 
 function App() {
   const step = useConfiguratorStore((s) => s.step);
@@ -68,8 +67,7 @@ function App() {
    * (modumacc.com.br/?produto=...): a URL do configurador vem com
    * `?add=<id-do-produto-woocommerce>`, e assim que o cliente entra na tela
    * de montagem (depois de informar as medidas do espaço) esse módulo já é
-   * adicionado automaticamente à composição, no final da fileira certa
-   * (decidida pelo nome do produto — ver `store/`).
+   * adicionado automaticamente à composição, no primeiro canto livre.
    * Roda só uma vez por sessão (ver `autoAddedRef`) e limpa o parâmetro da
    * URL depois, pra não adicionar de novo se a pessoa atualizar a página.
    */
@@ -96,55 +94,48 @@ function App() {
   }, [step, catalog, addModule]);
 
   /**
-   * Calcula em que fileira e em que X (cm) o módulo ficaria SE fosse solto
-   * agora — usado tanto pra desenhar o indicador "fantasma" em tempo real
-   * (`onDragMove`) quanto pra decidir a posição final (`onDragEnd`).
+   * Calcula em que ponto (X, Y em cm) o módulo ficaria SE fosse solto agora
+   * — usado tanto pra desenhar o indicador "fantasma" em tempo real
+   * (`onDragMove`) quanto pra decidir a posição final (`onDragEnd`). Não há
+   * mais fileiras: o quadrante inteiro (`WALL_DROPPABLE_ID`, ver
+   * `BuildCanvas.tsx`) é um único alvo, e o módulo pode ir pra qualquer
+   * ponto dele.
    *
    * A matemática: `active.rect.current.translated` é o retângulo do item
-   * sendo arrastado (o elemento ORIGINAL, não o `DragOverlay`) já somado
+   * sendo arrastado (o elemento ORIGINAL, não um `DragOverlay`) já somado
    * ao deslocamento do dedo/mouse — o dnd-kit calcula isso sozinho, não
    * precisamos aplicar transform manualmente em nada. Pegamos o CENTRO
-   * desse retângulo, subtraímos a borda esquerda da fileira (`over.rect`)
-   * pra virar um X relativo à fileira, e convertemos de pixel pra cm usando
-   * a escala real da fileira (`over.rect.width / room.widthCm` — a fileira
-   * sempre ocupa a largura toda do ambiente informado). Por fim subtraímos
-   * metade da largura do módulo, porque queremos a borda ESQUERDA dele (o
-   * que a store espera), não o centro.
+   * desse retângulo, subtraímos a borda esquerda/superior do quadrante
+   * (`over.rect`) pra virar um X/Y relativo a ele, e convertemos de pixel
+   * pra cm usando a escala real do quadrante (`over.rect.width /
+   * room.widthCm` — largura e altura usam a MESMA escala, sem distorcer).
+   * Por fim subtraímos metade da largura/altura do módulo, porque queremos
+   * a borda ESQUERDA/SUPERIOR dele (o que a store espera), não o centro.
    */
   function computeDropTarget(
     event: DragMoveEvent | DragEndEvent,
-  ): { row: RowKey; offsetCm: number; widthCm: number } | null {
+  ): { x: number; y: number; widthCm: number; heightCm: number } | null {
     const { active, over } = event;
     if (!over || !room) return null;
-
-    const match = /^row::(.+)$/.exec(String(over.id));
-    if (!match) return null;
-    const row = match[1] as RowKey;
+    if (over.id !== WALL_DROPPABLE_ID) return null;
 
     const data = active.data.current as DragData | undefined;
     if (!data) return null;
-
-    // A fileira de destino tem que ser a mesma do produto — não dá pra
-    // soltar um "Superior" na fileira "Inferior" (ver `BuildCanvas.tsx`,
-    // que já desabilita o droppable das fileiras erradas, isso aqui é só
-    // uma segunda trava de segurança).
-    if (data.type === 'catalog-module') {
-      const mod = catalog.find((m) => m.id === data.moduleId);
-      if (!mod || inferRowKey(mod.name) !== row) return null;
-    } else if (data.row !== row) {
-      return null;
-    }
 
     const translated = active.rect.current.translated;
     if (!translated || !over.rect.width) return null;
 
     const widthCm = data.widthCm;
+    const heightCm = data.heightCm;
     const scale = over.rect.width / room.widthCm;
     const centerX = translated.left + translated.width / 2;
+    const centerY = translated.top + translated.height / 2;
     const relativeX = centerX - over.rect.left;
-    const offsetCm = relativeX / scale - widthCm / 2;
+    const relativeY = centerY - over.rect.top;
+    const x = relativeX / scale - widthCm / 2;
+    const y = relativeY / scale - heightCm / 2;
 
-    return { row, offsetCm, widthCm };
+    return { x, y, widthCm, heightCm };
   }
 
   /** Atualiza o indicador "fantasma" a cada movimento — dá o feedback em tempo real de onde o módulo vai encaixar. */
@@ -164,9 +155,9 @@ function App() {
     if (data.type === 'catalog-module') {
       const mod = catalog.find((m) => m.id === data.moduleId);
       if (!mod) return;
-      addModule(mod, data.widthCm, target.offsetCm);
+      addModule(mod, data.widthCm, { x: target.x, y: target.y });
     } else {
-      moveModule(data.instanceId, target.offsetCm);
+      moveModule(data.instanceId, target.x, target.y);
     }
   }
 
@@ -213,11 +204,11 @@ function App() {
       </div>
 
       {/*
-        Não usamos mais `DragOverlay` com preview do módulo aqui: agora o
-        feedback em tempo real é o indicador "fantasma" desenhado dentro da
-        própria fileira (`BuildCanvas.tsx` > `RowCanvas`), que já mostra
-        exatamente onde e do tamanho que o módulo vai encaixar — muito mais
-        direto que um card flutuante genérico seguindo o dedo.
+        Não usamos `DragOverlay` com preview do módulo aqui: o feedback em
+        tempo real é o indicador "fantasma" desenhado dentro do próprio
+        quadrante (`BuildCanvas.tsx`), que já mostra exatamente onde e do
+        tamanho que o módulo vai encaixar — muito mais direto que um card
+        flutuante genérico seguindo o dedo.
       */}
     </DndContext>
   );
