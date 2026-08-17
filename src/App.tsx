@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
@@ -41,16 +42,32 @@ function App() {
   const [activeDrag, setActiveDrag] = useState<ActiveDragPreview | null>(null);
 
   /**
-   * Sem isso, arrastar no celular fica quebrado: o navegador interpreta o
-   * toque como scroll da página antes do dnd-kit conseguir iniciar o drag.
-   * O `activationConstraint` (mover 8px antes de "confirmar" o drag) evita
-   * que um toque rápido em outro elemento dispare um arrasto sem querer —
-   * o resto da confiabilidade em touch vem do `touch-none` nos elementos
-   * arrastáveis (ver `ModuleCard.tsx`, `ModuleChip.tsx` e `BuildCanvas.tsx`)
-   * e do `PointerSensor`, que no mobile já cobre toque via Pointer Events
-   * (não precisa de um `TouchSensor` separado).
+   * `PointerSensor` sozinho NÃO é confiável em toque real (testado em
+   * celular físico): o navegador decide se o gesto é "rolar a faixa" ou
+   * "arrastar o módulo" antes do JS conseguir reagir, e sem um sensor
+   * dedicado a toque, o gesto quase sempre vira rolagem. Por isso aqui
+   * usamos o par oficial recomendado pelo dnd-kit pra essa ambiguidade:
+   * `MouseSensor` cuida do desktop (mouse), `TouchSensor` cuida do toque
+   * de verdade — cada um com sua própria forma de desambiguar arrastar vs.
+   * rolar:
+   * - Mouse: `distance` (8px) — precisa mover um pouco antes de "confirmar"
+   *   o drag, pra um clique simples não virar arrasto sem querer.
+   * - Touch: `delay` (200ms) + `tolerance` (8px) — precisa segurar o dedo
+   *   parado por um instante antes do drag "pegar"; se a pessoa já começar
+   *   a mover o dedo rápido (gesto típico de rolagem), o navegador rola
+   *   normalmente em vez de iniciar o arrasto. Isso é o que resolve de vez
+   *   a ambiguidade "toque = rolar a faixa" vs. "toque = arrastar o módulo".
+   * O resto da confiabilidade em touch vem do `touch-none` (touch-action:
+   * none) aplicado exatamente no elemento que recebe os listeners do
+   * dnd-kit em cada item arrastável (ver `ModuleCard.tsx`, `ModuleChip.tsx`
+   * e `BuildCanvas.tsx`) — sem isso, mesmo com o TouchSensor certo, o
+   * navegador pode iniciar a rolagem nativa antes do JS conseguir
+   * interceptar o gesto.
    */
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  );
 
   useEffect(() => {
     void loadCatalog();
