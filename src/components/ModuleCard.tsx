@@ -14,12 +14,11 @@ interface Props {
  * (`hidden md:block`; no mobile quem aparece é o `ModuleChip.tsx`, mais
  * compacto, renderizado ao lado deste em `ModulePanel.tsx`). Tem seletor de
  * largura quando há mais de uma opção. Duas formas de colocar na parede:
- * 1. Arrastar (pega pela imagem/nome) até a posição exata que quiser dentro
- *    da fileira certa — a fileira em si é sempre a do produto (superior,
- *    inferior, torre... decidida pelo nome, ver `utils/rows.ts`), só a
- *    posição dentro dela é livre.
- * 2. Tocar em "+ Adicionar", que joga o módulo direto pro final da fileira
- *    — atalho mais rápido quando a posição exata não importa.
+ * 1. Arrastar (pega pela imagem/nome) até QUALQUER ponto do quadrante —
+ *    posição totalmente livre em X e Y, sem fileira ou categoria fixa (ver
+ *    `utils/placement.ts`).
+ * 2. Tocar em "+ Adicionar", que joga o módulo no primeiro canto livre —
+ *    atalho mais rápido quando a posição exata não importa.
  */
 export function ModuleCard({ module }: Props) {
   const [widthCm, setWidthCm] = useState(module.availableWidths[0] ?? 0);
@@ -27,7 +26,7 @@ export function ModuleCard({ module }: Props) {
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `catalog-${module.id}-${widthCm}`,
-    data: { type: 'catalog-module', moduleId: module.id, widthCm },
+    data: { type: 'catalog-module', moduleId: module.id, widthCm, heightCm: module.heightCm },
   });
 
   return (
