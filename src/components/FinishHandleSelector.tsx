@@ -25,7 +25,7 @@ export function FinishHandleSelector() {
   if (finishes.length === 0 && handles.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-6 border-b border-brand-silver-200 bg-white px-6 py-3">
+    <div className="flex flex-wrap items-center gap-3 border-b border-brand-silver-200 bg-white px-4 py-2 md:gap-6 md:px-6 md:py-3">
       {finishes.length > 0 && (
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-brand-silver-700">
@@ -37,7 +37,7 @@ export function FinishHandleSelector() {
                 key={f}
                 onClick={() => setFinish(f)}
                 title={f}
-                className={`rounded-full border-2 px-3 py-1 text-xs transition ${
+                className={`rounded-full border-2 px-2.5 py-0.5 text-[11px] transition md:px-3 md:py-1 md:text-xs ${
                   finish === f
                     ? 'border-brand-navy-800 bg-brand-navy-800 text-white'
                     : 'border-brand-silver-400 text-brand-navy-800 hover:border-brand-navy-700'
@@ -60,7 +60,7 @@ export function FinishHandleSelector() {
               <button
                 key={h}
                 onClick={() => setHandle(h)}
-                className={`rounded-full border-2 px-3 py-1 text-xs transition ${
+                className={`rounded-full border-2 px-2.5 py-0.5 text-[11px] transition md:px-3 md:py-1 md:text-xs ${
                   handle === h
                     ? 'border-brand-navy-800 bg-brand-navy-800 text-white'
                     : 'border-brand-silver-400 text-brand-navy-800 hover:border-brand-navy-700'
