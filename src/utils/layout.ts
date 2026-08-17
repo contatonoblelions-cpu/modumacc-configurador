@@ -32,6 +32,16 @@ export function formatMeters(cm: number): string {
   return `${(cm / 100).toFixed(2).replace('.', ',')}m`;
 }
 
+/**
+ * Altura (em px) de uma fileira na área de montagem mobile, proporcional à
+ * altura real informada pelo cliente — em vez de uma caixa genérica grande
+ * e vazia. Limitado entre um mínimo (pra caber o texto) e um máximo (pra
+ * não estourar a tela em ambientes muito altos).
+ */
+export function mobileRowHeightPx(heightCm: number): number {
+  return Math.round(Math.max(56, Math.min(92, heightCm * 1.1)));
+}
+
 export function totalPriceCents(modules: PlacedModule[]): number {
   return modules.reduce(
     (sum, m) => sum + (m.resolvedPriceCents ?? m.basePriceCents),
