@@ -122,6 +122,13 @@ function App() {
       <div className="flex h-screen flex-col">
         <Header />
         <FinishHandleSelector />
+        {/*
+          No mobile a ordem visual é invertida (área de montagem fixa em
+          cima, faixa de módulos rolável embaixo — layout "estilo editor de
+          vídeo", ver BuildCanvas.tsx/ModulePanel.tsx) via `order`, sem mudar
+          a ordem real no DOM nem o layout desktop (`md:order-none` volta pra
+          ordem de código: painel à esquerda, parede à direita).
+        */}
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
           {step === 'build' && <ModulePanel />}
           <BuildCanvas />
