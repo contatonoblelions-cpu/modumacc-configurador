@@ -42,18 +42,37 @@ export function SummaryBar() {
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t border-brand-silver-200/70 bg-white/80 px-4 py-3 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
-      <div>
-        <p className="text-xs text-brand-silver-600">
-          {modules.length} {modules.length === 1 ? 'módulo' : 'módulos'}
-          {resolving && ' · atualizando preços...'}
-        </p>
-        <p className="text-xl font-semibold text-brand-navy-900">{formatBRL(total)}</p>
-        {room && step !== 'room' && (
-          <p className="text-[11px] text-brand-silver-500 md:hidden">
-            {formatMeters(usedCmTotal)} de {formatMeters(room.widthCm)} ocupados
+    <div className="flex flex-col gap-2 border-t border-brand-silver-200/70 bg-white/80 px-4 py-2.5 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-6 sm:py-4">
+      <div className="flex items-center justify-between gap-2 md:block">
+        <div>
+          <p className="text-xs text-brand-silver-600">
+            {modules.length} {modules.length === 1 ? 'módulo' : 'módulos'}
+            {resolving && ' · atualizando preços...'}
           </p>
-        )}
+          <p className="text-xl font-semibold text-brand-navy-900">{formatBRL(total)}</p>
+          {room && step !== 'room' && (
+            <p className="text-[11px] text-brand-silver-500 md:hidden">
+              {formatMeters(usedCmTotal)} de {formatMeters(room.widthCm)} ocupados
+            </p>
+          )}
+        </div>
+        {/* Ícone de carrinho, só decorativo, só no mobile — reforça o botão abaixo. */}
+        <svg
+          viewBox="0 0 24 24"
+          className="h-6 w-6 shrink-0 text-brand-navy-700 md:hidden"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
+          <circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none" />
+          <circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none" />
+          <path
+            d="M2.5 3h2l2.2 11.4a1.8 1.8 0 0 0 1.8 1.5h8.6a1.8 1.8 0 0 0 1.77-1.47L20.9 7.5H6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
       {step === 'build' ? (
         <button
