@@ -48,23 +48,50 @@ export function groupByRow(
 }
 
 /**
- * Converte um índice de inserção RELATIVO a uma fileira (0 = antes do
- * primeiro módulo daquela fileira, N = depois do último) num índice GLOBAL
- * no array flat de módulos — necessário porque módulos de fileiras
- * diferentes ficam misturados no mesmo array, na ordem em que aparecem
- * (ver `PlacedModule.row` em `types/composition.ts`).
+ * Resolve a posição horizontal (offset em cm) de um módulo dentro da
+ * própria fileira: parte do X desejado (onde o dedo soltou), garante que
+ * cabe dentro da largura do ambiente, e — se colidir com outro módulo já
+ * colocado — "escorrega" pro ponto livre válido mais PRÓXIMO do X desejado
+ * (encostado logo antes ou logo depois de quem está no caminho), em vez de
+ * simplesmente recusar o drop. Isso é o que dá a sensação de "soltar onde
+ * quiser": não precisa mais encaixar numa sequência, só não pode ficar por
+ * cima de outro módulo da mesma fileira.
+ *
+ * `others` é a lista dos OUTROS módulos já colocados na mesma fileira (sem
+ * incluir o que está sendo movido/adicionado agora). `fallback` é usado só
+ * no caso raro de a fileira estar tão cheia que não sobra nenhum ponto
+ * válido — devolve a posição anterior (ou o fim da fileira), sem travar a
+ * interação.
  */
-export function globalInsertIndex(
-  modules: PlacedModule[],
-  row: RowKey,
-  indexInRow: number,
+export function resolveOffsetCm(
+  others: Array<{ offsetCm: number; widthCm: number }>,
+  desiredOffsetCm: number,
+  widthCm: number,
+  roomWidthCm: number,
+  fallback: number,
 ): number {
-  const rowGlobalIndices = modules
-    .map((m, i) => ({ m, i }))
-    .filter(({ m }) => m.row === row)
-    .map(({ i }) => i);
-  if (rowGlobalIndices.length === 0) return modules.length;
-  const clamped = Math.max(0, Math.min(indexInRow, rowGlobalIndices.length));
-  if (clamped >= rowGlobalIndices.length) return rowGlobalIndices[rowGlobalIndices.length - 1] + 1;
-  return rowGlobalIndices[clamped];
+  const maxStart = Math.max(0, roomWidthCm - widthCm);
+  const clamp = (v: number) => Math.min(maxStart, Math.max(0, v));
+  const overlaps = (start: number) =>
+    others.some((o) => start < o.offsetCm + o.widthCm && start + widthCm > o.offsetCm);
+
+  const desired = clamp(desiredOffsetCm);
+  if (!overlaps(desired)) return desired;
+
+  const candidates = [0, maxStart];
+  others.forEach((o) => {
+    candidates.push(clamp(o.offsetCm + o.widthCm)); // encostado logo depois desse módulo
+    candidates.push(clamp(o.offsetCm - widthCm)); // encostado logo antes desse módulo
+  });
+
+  const valid = candidates.filter((c) => !overlaps(c));
+  if (valid.length === 0) return clamp(fallback);
+
+  valid.sort((a, b) => Math.abs(a - desired) - Math.abs(b - desired));
+  return valid[0];
+}
+
+/** Soma das larguras dos módulos de uma fileira — usado como posição padrão (final da fila) quando não há um X específico (ex.: botão "+ Adicionar", deep-link). */
+export function packedEndOffsetCm(others: Array<{ widthCm: number }>): number {
+  return others.reduce((sum, m) => sum + m.widthCm, 0);
 }
