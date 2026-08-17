@@ -24,6 +24,14 @@ export interface PlacedModule {
   heightCm: number;
   /** Fileira da parede em que esse módulo está (superior, inferior, torre...). */
   row: RowKey;
+  /**
+   * Posição horizontal LIVRE dentro da própria fileira, em cm a partir da
+   * borda esquerda (0 = encostado na esquerda). Não precisa mais estar
+   * grudado no vizinho — pode ter espaço vazio de qualquer tamanho antes ou
+   * depois. Sempre resolvida (arredondada e sem sobrepor outro módulo da
+   * mesma fileira) por `resolveOffsetCm` em `utils/rows.ts`.
+   */
+  offsetCm: number;
   /** Preço base (sem considerar acabamento específico) usado antes de resolver a variação exata. */
   basePriceCents: number;
   /** Preenchido depois de resolver contra acabamento/puxador globais da composição. */
