@@ -59,7 +59,7 @@ function InsertSlot({
     <div
       ref={setNodeRef}
       className={`self-stretch shrink-0 rounded transition-all ${
-        isOver ? 'w-9 bg-brand-navy-100' : disabled ? 'w-1' : 'w-2.5'
+        isOver ? 'w-10 bg-brand-navy-100' : disabled ? 'w-1' : 'w-3.5'
       }`}
     />
   );
