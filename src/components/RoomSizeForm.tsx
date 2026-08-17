@@ -52,9 +52,9 @@ export function RoomSizeForm() {
       <h1 className="mb-2 text-2xl font-semibold text-brand-navy-900">Monte sua cozinha</h1>
       <p className="mb-8 text-brand-silver-700">
         Informe as medidas do espaço disponível. Você vai montar a parede
-        arrastando os módulos até a posição que quiser dentro da fileira
-        certa (superior, inferior...), ou tocando em "+ Adicionar" pra ir
-        direto pro final — dentro dessa largura.
+        arrastando os módulos e soltando em qualquer ponto do quadrante —
+        livre, do jeito que preferir montar sua cozinha — ou tocando em
+        "+ Adicionar" pra ir direto pro primeiro espaço livre.
       </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
