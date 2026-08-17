@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useConfiguratorStore } from '../store/configuratorStore';
-import { hasAnyRowOverflow, totalPriceCents, formatMeters } from '../utils/layout';
+import { totalPriceCents, formatMeters } from '../utils/layout';
 import { formatBRL } from '../api/parseAttributes';
 import { addAllToCartAndRedirect } from '../utils/cartUrl';
 import { AiVisualization } from './AiVisualization';
@@ -20,16 +20,14 @@ export function SummaryBar() {
   const [redirecting, setRedirecting] = useState(false);
 
   const total = totalPriceCents(modules);
-  // Soma bruta de todos os módulos, ignorando fileira — é só um resumo
-  // informativo pro mobile (ver mockup: "2,30m de 3,00m ocupados"), a regra
-  // que realmente bloqueia continua sendo por fileira (hasAnyRowOverflow).
+  // Soma bruta de todos os módulos — só um resumo informativo pro mobile
+  // (ver mockup: "2,30m de 3,00m ocupados"). Não há mais checagem de
+  // "estouro": a posição livre em X/Y (ver `utils/placement.ts`) já nunca
+  // deixa um módulo sair dos limites do espaço informado, então não existe
+  // mais um estado de "não cabe" pra bloquear aqui.
   const usedCmTotal = modules.reduce((sum, m) => sum + m.widthCm, 0);
   const allResolved = modules.every((m) => m.resolvedAddToCartUrl);
-  // Cada fileira da parede é checada contra a largura do ambiente separadamente
-  // (ver utils/layout.ts) — não dá pra prosseguir nem finalizar se alguma
-  // fileira estourou.
-  const overflow = hasAnyRowOverflow(room, modules);
-  const canProceed = modules.length > 0 && !overflow;
+  const canProceed = modules.length > 0;
   const canFinish = canProceed && allResolved && !resolving;
 
   async function handleFinish() {
