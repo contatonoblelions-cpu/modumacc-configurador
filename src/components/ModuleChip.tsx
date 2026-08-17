@@ -17,6 +17,15 @@ interface Props {
  * toque (usa a primeira largura disponível) ou com um arrasto — igual ao
  * mockup de referência. Trocar a largura depois de já colocado fica pra uma
  * iteração futura, se for necessário.
+ *
+ * PROPOSITALMENTE sem `touch-action: none` aqui — a faixa (`ModulePanel.tsx`)
+ * rola na horizontal, e travar o touch-action bloquearia esse deslize
+ * sempre que o dedo tocasse em cima de um chip (a faixa é quase só chips
+ * lado a lado, então na prática travaria o deslize quase inteiro). Em vez
+ * disso, a desambiguação "deslizar rápido = rolar" vs. "segurar parado =
+ * arrastar" fica só por conta do `activationConstraint` (delay + tolerance)
+ * do `TouchSensor` em `App.tsx` — é o próprio dnd-kit que decide, sem
+ * precisar bloquear o touch-action.
  */
 export function ModuleChip({ module }: Props) {
   const addModule = useConfiguratorStore((s) => s.addModule);
@@ -34,7 +43,7 @@ export function ModuleChip({ module }: Props) {
       {...listeners}
       {...attributes}
       onClick={() => addModule(module, widthCm)}
-      className={`flex h-[72px] w-[76px] shrink-0 touch-none flex-col items-center justify-center gap-0.5 rounded-lg bg-brand-navy-800 px-1.5 text-center text-white shadow-sm transition active:scale-95 md:hidden ${
+      className={`flex h-[72px] w-[76px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-brand-navy-800 px-1.5 text-center text-white shadow-sm transition active:scale-95 md:hidden ${
         isDragging ? 'opacity-40' : ''
       }`}
       title={`Adicionar ${module.name}`}
@@ -44,4 +53,3 @@ export function ModuleChip({ module }: Props) {
     </button>
   );
 }
-
