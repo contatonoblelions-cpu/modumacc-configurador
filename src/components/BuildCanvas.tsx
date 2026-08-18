@@ -3,6 +3,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { formatBRL } from '../api/parseAttributes';
 import { ModuleSchematic } from './ModuleSchematic';
+import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
 import type { PlacedModule } from '../types/composition';
@@ -18,6 +19,7 @@ export const WALL_DROPPABLE_ID = 'wall';
 interface PlacedModuleBoxProps {
   m: PlacedModule;
   scale: number;
+  finish: string | null;
   finishImageUrl: string | null;
   handleColor: { fill: string; stroke: string } | null;
   onRemove: (instanceId: string) => void;
@@ -29,7 +31,8 @@ interface PlacedModuleBoxProps {
  * arrastável, pra reposicionar em qualquer ponto do quadrante sem precisar
  * remover e adicionar de novo — como mover uma peça de lego pelo tabuleiro.
  */
-function PlacedModuleBox({ m, scale, finishImageUrl, handleColor, onRemove }: PlacedModuleBoxProps) {
+function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemove }: PlacedModuleBoxProps) {
+  const hasPhoto = hasModulePhoto(m.moduleName);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `placed-${m.instanceId}`,
     data: { type: 'placed-module', instanceId: m.instanceId, widthCm: m.widthCm, heightCm: m.heightCm },
@@ -52,36 +55,49 @@ function PlacedModuleBox({ m, scale, finishImageUrl, handleColor, onRemove }: Pl
         className="h-full w-full touch-none cursor-grab active:cursor-grabbing"
       >
         {/*
-          Mobile: caixa com a foto do acabamento de fundo (ver
-          `utils/finishSwatches.ts`) + nome/largura por cima — bate com o
-          mockup de referência e cabe em módulos pequenos. Desktop: mantém
-          o esquema em SVG (ver `ModuleSchematic.tsx`), agora colorido com a
-          mesma foto via `finishImageUrl`.
+          Mobile: foto REAL do formato (ver `utils/modulePhotos.ts` e
+          `ModulePhoto.tsx`) preenchendo a caixa toda, com nome/largura por
+          cima — bate com o mockup de referência e cabe em módulos
+          pequenos. Sem foto mapeada ainda pra esse formato, cai pro texto
+          simples com fundo do acabamento (visual antigo). Desktop: mesma
+          lógica, mas com a foto ocupando 2/3 de cima e o texto embaixo,
+          igual já era com o desenho esquemático.
         */}
-        <div
-          style={
-            finishImageUrl
-              ? {
-                  backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.75) 100%), url(${finishImageUrl})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }
-              : undefined
-          }
-          className="flex h-full w-full flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md border border-brand-silver-300 bg-white px-1 text-center md:hidden"
-        >
-          <span className="line-clamp-2 text-[10px] font-medium leading-tight text-brand-navy-800">
-            {m.moduleName}
-          </span>
-          <span className="text-[9px] text-brand-silver-600">{m.widthCm}cm</span>
+        <div className="relative h-full w-full overflow-hidden rounded-md border border-brand-silver-300 bg-white md:hidden">
+          {hasPhoto ? (
+            <ModulePhoto name={m.moduleName} finish={finish} className="absolute inset-0 h-full w-full" />
+          ) : (
+            <div
+              style={
+                finishImageUrl
+                  ? {
+                      backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.75) 100%), url(${finishImageUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }
+                  : undefined
+              }
+              className="absolute inset-0"
+            />
+          )}
+          <div className="absolute inset-0 flex flex-col items-center justify-end gap-0.5 px-1 pb-0.5 text-center">
+            <span className="line-clamp-2 rounded bg-white/80 px-0.5 text-[10px] font-medium leading-tight text-brand-navy-800">
+              {m.moduleName}
+            </span>
+            <span className="rounded bg-white/80 px-0.5 text-[9px] text-brand-silver-600">{m.widthCm}cm</span>
+          </div>
         </div>
         <div className="hidden h-full w-full overflow-hidden rounded-md border border-brand-silver-300 bg-white md:block">
-          <ModuleSchematic
-            name={m.moduleName}
-            finishImageUrl={finishImageUrl}
-            handleColor={handleColor}
-            className="h-2/3 w-full"
-          />
+          {hasPhoto ? (
+            <ModulePhoto name={m.moduleName} finish={finish} className="h-2/3 w-full" />
+          ) : (
+            <ModuleSchematic
+              name={m.moduleName}
+              finishImageUrl={finishImageUrl}
+              handleColor={handleColor}
+              className="h-2/3 w-full"
+            />
+          )}
           <div className="px-1 text-center">
             <p className="truncate text-[11px] text-brand-silver-700">{m.moduleName}</p>
             <p className="text-[11px] font-medium text-brand-navy-800">{m.widthCm}cm</p>
@@ -185,6 +201,7 @@ export function BuildCanvas() {
             key={m.instanceId}
             m={m}
             scale={scale}
+            finish={finish}
             finishImageUrl={finishImageUrl}
             handleColor={handleColor}
             onRemove={removeModule}
