@@ -62,25 +62,27 @@ async function fetchImageAsBase64(url: string): Promise<InlineImagePart | null> 
 
 function buildPrompt(body: GenerateRenderBody): string {
   const lista = body.modules
-  .map((m, i) => `${i + 1}. ${m.name} — largura ${m.widthCm}cm, altura ${m.heightCm}cm`)
-  .join('\n');
+    .map((m, i) => `${i + 1}. ${m.name} — largura ${m.widthCm}cm, altura ${m.heightCm}cm`)
+    .join('\n');
 
-return [
-  'Você é um visualizador de ambientes para uma loja de móveis planejados.',
-  'A primeira imagem é uma foto real do ambiente/parede do cliente, tirada por ele.',
-  'As imagens seguintes são fotos de referência dos produtos de marcenaria que o cliente escolheu, na ordem em que devem ficar posicionados lado a lado, da esquerda para a direita, encostados na mesma parede da foto.',
-  '',
-  `Espaço disponível informado pelo cliente: ${body.roomWidthCm}cm de largura por ${body.roomHeightCm}cm de altura.`,
-  body.finish ? `Acabamento/cor escolhido para todos os módulos: ${body.finish}.` : '',
-  body.handle ? `Acabamento do puxador: ${body.handle}.` : '',
-  '',
-  'Módulos, em ordem da esquerda para a direita:',
-  lista,
-  '',
-  'Gere uma imagem fotorrealista mostrando esse ambiente real do cliente com essa composição de móveis já instalada na parede, na escala correta em relação às medidas do espaço, no acabamento e cor indicados. Mantenha o resto do ambiente (parede, piso, iluminação, perspectiva) o mais fiel possível à foto original enviada — só adicione os móveis, não altere o resto do cômodo.',
+  return [
+    'Você é um visualizador de ambientes para uma loja de móveis planejados.',
+    'A primeira imagem é uma foto real do ambiente/parede do cliente, tirada por ele.',
+    'As imagens seguintes são fotos de referência dos produtos de marcenaria que o cliente escolheu, na ordem em que devem ficar posicionados lado a lado, da esquerda para a direita, encostados na mesma parede da foto.',
+    '',
+    `Espaço disponível informado pelo cliente: ${body.roomWidthCm}cm de largura por ${body.roomHeightCm}cm de altura.`,
+    body.finish ? `Acabamento/cor escolhido para todos os módulos: ${body.finish}.` : '',
+    body.handle ? `Acabamento do puxador: ${body.handle}.` : '',
+    '',
+    'Módulos, em ordem da esquerda para a direita:',
+    lista,
+    '',
+    'Gere uma imagem fotorrealista mostrando esse ambiente real do cliente com essa composição de móveis já instalada na parede, na escala correta em relação às medidas do espaço, no acabamento e cor indicados. Mantenha o resto do ambiente (parede, piso, iluminação, perspectiva) o mais fiel possível à foto original enviada — só adicione os móveis, não altere o resto do cômodo.',
+    '',
+    'Padrão de qualidade da renderização: foto de arquitetura/catálogo de marcenaria profissional, nítida e bem iluminada com luz natural, ângulo frontal e reto (não em perspectiva forçada), como as fotos de portfólio da Modumacc. Os móveis devem ter acabamento fosco fiel à cor indicada, com veios de madeira visíveis quando o acabamento for de madeira, dobradiças e puxadores discretos e bem definidos, e sombras suaves e realistas de contato com a parede/piso — sem parecer um render 3D genérico ou colagem, e sim uma fotografia real do ambiente já pronto.',
   ]
-  .filter(Boolean)
-  .join('\n');
+    .filter(Boolean)
+    .join('\n');
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -89,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     res.status(500).json({
       error:
@@ -98,59 +100,59 @@ const apiKey = process.env.GEMINI_API_KEY;
     return;
   }
 
-const body = req.body as GenerateRenderBody;
+  const body = req.body as GenerateRenderBody;
   if (!body?.roomPhotoBase64 || !body.modules?.length) {
     res.status(400).json({ error: 'Faltou a foto do ambiente ou os módulos da composição.' });
     return;
   }
 
-try {
-  const productImageParts = (
-    await Promise.all(body.modules.map((m) => fetchImageAsBase64(m.imageUrl)))
+  try {
+    const productImageParts = (
+      await Promise.all(body.modules.map((m) => fetchImageAsBase64(m.imageUrl)))
     ).filter((p): p is InlineImagePart => p !== null);
 
-  const parts = [
-    { text: buildPrompt(body) },
-    {
-      inlineData: {
-        mimeType: body.roomPhotoMimeType || 'image/jpeg',
-        data: body.roomPhotoBase64,
+    const parts = [
+      { text: buildPrompt(body) },
+      {
+        inlineData: {
+          mimeType: body.roomPhotoMimeType || 'image/jpeg',
+          data: body.roomPhotoBase64,
+        },
       },
-    },
-    ...productImageParts,
+      ...productImageParts,
     ];
 
-  const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts }],
-    }),
-  });
+    const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts }],
+      }),
+    });
 
-  if (!geminiRes.ok) {
-    const errText = await geminiRes.text();
-    res.status(502).json({ error: `Gemini respondeu ${geminiRes.status}: ${errText.slice(0, 300)}` });
-    return;
-  }
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      res.status(502).json({ error: `Gemini respondeu ${geminiRes.status}: ${errText.slice(0, 300)}` });
+      return;
+    }
 
-  const data = await geminiRes.json();
-  const imagePart = data?.candidates?.[0]?.content?.parts?.find(
-    (p: { inlineData?: { data?: string } }) => p.inlineData?.data,
+    const data = await geminiRes.json();
+    const imagePart = data?.candidates?.[0]?.content?.parts?.find(
+      (p: { inlineData?: { data?: string } }) => p.inlineData?.data,
     );
 
-  if (!imagePart?.inlineData?.data) {
-    res.status(502).json({ error: 'O Gemini não devolveu uma imagem. Tente novamente.' });
-    return;
-  }
+    if (!imagePart?.inlineData?.data) {
+      res.status(502).json({ error: 'O Gemini não devolveu uma imagem. Tente novamente.' });
+      return;
+    }
 
-  res.status(200).json({
-    imageBase64: imagePart.inlineData.data,
-    mimeType: imagePart.inlineData.mimeType ?? 'image/png',
-  });
-} catch (err) {
-  res.status(500).json({
-    error: err instanceof Error ? err.message : 'Erro inesperado gerando a visualização.',
-  });
-}
+    res.status(200).json({
+      imageBase64: imagePart.inlineData.data,
+      mimeType: imagePart.inlineData.mimeType ?? 'image/png',
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Erro inesperado gerando a visualização.',
+    });
+  }
 }
