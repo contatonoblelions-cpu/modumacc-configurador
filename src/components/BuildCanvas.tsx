@@ -4,6 +4,7 @@ import { useConfiguratorStore } from '../store/configuratorStore';
 import { formatBRL } from '../api/parseAttributes';
 import { ModuleSchematic } from './ModuleSchematic';
 import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
+import { IsoBevel } from './IsoBevel';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
 import type { PlacedModule } from '../types/composition';
@@ -39,6 +40,13 @@ interface PlacedModuleBoxProps {
  * separados. Nome, largura e preço ficam escondidos por padrão e só
  * aparecem num overlay ao passar o mouse/tocar (igual o botão de remover já
  * funcionava), pra não poluir a parede.
+ *
+ * Cara de "caixa 3D" (pedido do cliente, referência "Modular Kitchen
+ * Designer"): chanfro de topo+lateral via `IsoBevel` por cima do painel —
+ * por isso o `overflow-hidden` que recorta a foto foi movido pro wrapper
+ * INTERNO (`.relative.h-full...overflow-hidden` logo abaixo), deixando o
+ * contêiner externo (que tem o `ref` do drag) com overflow visível só pra
+ * essas duas tirinhas decorativas conseguirem "vazar" por cima/pela direita.
  */
 function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemove }: PlacedModuleBoxProps) {
   const hasPhoto = hasModulePhoto(m.moduleName);
@@ -62,35 +70,38 @@ function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemo
         width: m.widthCm * scale,
         height: m.heightCm * scale,
       }}
-      className={`group absolute overflow-hidden ring-1 ring-black/10 transition ${isDragging ? 'z-20 opacity-30 ring-2 ring-brand-navy-400' : ''}`}
+      className={`group absolute ring-1 ring-black/10 transition ${isDragging ? 'z-20 opacity-30 ring-2 ring-brand-navy-400' : ''}`}
     >
-      <div
-        {...listeners}
-        {...attributes}
-        className="relative h-full w-full touch-none cursor-grab active:cursor-grabbing"
-      >
-        {hasPhoto ? (
-          <ModulePhoto name={m.moduleName} finish={finish} className="absolute inset-0 h-full w-full" />
-        ) : (
-          <ModuleSchematic
-            name={m.moduleName}
-            finishImageUrl={finishImageUrl}
-            handleColor={handleColor}
-            className="absolute inset-0 h-full w-full"
-          />
-        )}
-
-        {/* Rótulo (nome + largura + preço) escondido por padrão, só aparece no hover/toque — mantém a parede limpa, igual a referência. */}
+      <IsoBevel />
+      <div className="relative h-full w-full overflow-hidden">
         <div
-          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end gap-0.5 px-1 pb-1 text-center opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100"
-          style={{ backgroundImage: 'linear-gradient(180deg, rgba(15,30,45,0) 55%, rgba(10,20,32,0.75) 100%)' }}
+          {...listeners}
+          {...attributes}
+          className="relative h-full w-full touch-none cursor-grab active:cursor-grabbing"
         >
-          <span className="line-clamp-2 text-[10px] font-medium leading-tight text-white drop-shadow-sm md:text-[11px]">
-            {m.moduleName}
-          </span>
-          <span className="text-[9px] text-brand-silver-200 drop-shadow-sm md:text-[10px]">
-            {m.widthCm}cm · {formatBRL(m.resolvedPriceCents ?? m.basePriceCents)}
-          </span>
+          {hasPhoto ? (
+            <ModulePhoto name={m.moduleName} finish={finish} className="absolute inset-0 h-full w-full" />
+          ) : (
+            <ModuleSchematic
+              name={m.moduleName}
+              finishImageUrl={finishImageUrl}
+              handleColor={handleColor}
+              className="absolute inset-0 h-full w-full"
+            />
+          )}
+
+          {/* Rótulo (nome + largura + preço) escondido por padrão, só aparece no hover/toque — mantém a parede limpa, igual a referência. */}
+          <div
+            className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end gap-0.5 px-1 pb-1 text-center opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100"
+            style={{ backgroundImage: 'linear-gradient(180deg, rgba(15,30,45,0) 55%, rgba(10,20,32,0.75) 100%)' }}
+          >
+            <span className="line-clamp-2 text-[10px] font-medium leading-tight text-white drop-shadow-sm md:text-[11px]">
+              {m.moduleName}
+            </span>
+            <span className="text-[9px] text-brand-silver-200 drop-shadow-sm md:text-[10px]">
+              {m.widthCm}cm · {formatBRL(m.resolvedPriceCents ?? m.basePriceCents)}
+            </span>
+          </div>
         </div>
       </div>
       <button
