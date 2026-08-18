@@ -3,6 +3,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { formatBRL } from '../api/parseAttributes';
 import { ModuleSchematic } from './ModuleSchematic';
+import { getFinishSwatch } from '../utils/finishSwatches';
 import type { PlacedModule } from '../types/composition';
 
 const CANVAS_MAX_PX = 760;
@@ -16,6 +17,7 @@ export const WALL_DROPPABLE_ID = 'wall';
 interface PlacedModuleBoxProps {
   m: PlacedModule;
   scale: number;
+  finishImageUrl: string | null;
   onRemove: (instanceId: string) => void;
 }
 
@@ -25,7 +27,7 @@ interface PlacedModuleBoxProps {
  * arrastável, pra reposicionar em qualquer ponto do quadrante sem precisar
  * remover e adicionar de novo — como mover uma peça de lego pelo tabuleiro.
  */
-function PlacedModuleBox({ m, scale, onRemove }: PlacedModuleBoxProps) {
+function PlacedModuleBox({ m, scale, finishImageUrl, onRemove }: PlacedModuleBoxProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `placed-${m.instanceId}`,
     data: { type: 'placed-module', instanceId: m.instanceId, widthCm: m.widthCm, heightCm: m.heightCm },
@@ -48,18 +50,31 @@ function PlacedModuleBox({ m, scale, onRemove }: PlacedModuleBoxProps) {
         className="h-full w-full touch-none cursor-grab active:cursor-grabbing"
       >
         {/*
-          Mobile: caixa de texto simples (nome + largura), sem desenho — bate
-          com o mockup de referência e cabe em módulos pequenos. Desktop:
-          mantém o esquema em SVG (ver `ModuleSchematic.tsx`), sem mudança.
+          Mobile: caixa com a foto do acabamento de fundo (ver
+          `utils/finishSwatches.ts`) + nome/largura por cima — bate com o
+          mockup de referência e cabe em módulos pequenos. Desktop: mantém
+          o esquema em SVG (ver `ModuleSchematic.tsx`), agora colorido com a
+          mesma foto via `finishImageUrl`.
         */}
-        <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md border border-brand-silver-300 bg-white px-1 text-center md:hidden">
+        <div
+          style={
+            finishImageUrl
+              ? {
+                  backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.75) 100%), url(${finishImageUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }
+              : undefined
+          }
+          className="flex h-full w-full flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md border border-brand-silver-300 bg-white px-1 text-center md:hidden"
+        >
           <span className="line-clamp-2 text-[10px] font-medium leading-tight text-brand-navy-800">
             {m.moduleName}
           </span>
           <span className="text-[9px] text-brand-silver-600">{m.widthCm}cm</span>
         </div>
         <div className="hidden h-full w-full overflow-hidden rounded-md border border-brand-silver-300 bg-white md:block">
-          <ModuleSchematic name={m.moduleName} className="h-2/3 w-full" />
+          <ModuleSchematic name={m.moduleName} finishImageUrl={finishImageUrl} className="h-2/3 w-full" />
           <div className="px-1 text-center">
             <p className="truncate text-[11px] text-brand-silver-700">{m.moduleName}</p>
             <p className="text-[11px] font-medium text-brand-navy-800">{m.widthCm}cm</p>
@@ -96,6 +111,8 @@ export function BuildCanvas() {
   const modules = useConfiguratorStore((s) => s.modules);
   const removeModule = useConfiguratorStore((s) => s.removeModule);
   const dragPreview = useConfiguratorStore((s) => s.dragPreview);
+  const finish = useConfiguratorStore((s) => s.finish);
+  const finishImageUrl = getFinishSwatch(finish);
 
   const { setNodeRef } = useDroppable({ id: WALL_DROPPABLE_ID });
 
@@ -155,7 +172,13 @@ export function BuildCanvas() {
         )}
 
         {modules.map((m) => (
-          <PlacedModuleBox key={m.instanceId} m={m} scale={scale} onRemove={removeModule} />
+          <PlacedModuleBox
+            key={m.instanceId}
+            m={m}
+            scale={scale}
+            finishImageUrl={finishImageUrl}
+            onRemove={removeModule}
+          />
         ))}
 
         {/*
