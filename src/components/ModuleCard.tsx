@@ -17,11 +17,11 @@ interface Props {
  * (`hidden md:block`; no mobile quem aparece é o `ModuleChip.tsx`, mais
  * compacto, renderizado ao lado deste em `ModulePanel.tsx`). Tem seletor de
  * largura quando há mais de uma opção. Duas formas de colocar na parede:
- * 1. Arrastar (pega pela imagem/nome) até QUALQUER ponto do quadrante —
- *    posição totalmente livre em X e Y, sem fileira ou categoria fixa (ver
- *    `utils/placement.ts`).
- * 2. Tocar em "+ Adicionar", que joga o módulo no primeiro canto livre —
- *    atalho mais rápido quando a posição exata não importa.
+ * 1. Arrastar (pega pela imagem/nome) até QUALQUER ponto da faixa certa
+ *    (parede ou chão, conforme o tipo do módulo) — posição livre em X e Y
+ *    dentro dela (ver `utils/placement.ts` e `utils/bands.ts`).
+ * 2. Tocar em "+ Adicionar", que joga o módulo no primeiro canto livre da
+ *    faixa — atalho mais rápido quando a posição exata não importa.
  */
 export function ModuleCard({ module }: Props) {
   const [widthCm, setWidthCm] = useState(module.availableWidths[0] ?? 0);
@@ -33,7 +33,7 @@ export function ModuleCard({ module }: Props) {
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `catalog-${module.id}-${widthCm}`,
-    data: { type: 'catalog-module', moduleId: module.id, widthCm, heightCm: module.heightCm },
+    data: { type: 'catalog-module', moduleId: module.id, moduleName: module.name, widthCm, heightCm: module.heightCm },
   });
 
   return (
@@ -89,7 +89,7 @@ export function ModuleCard({ module }: Props) {
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => addModule(module, widthCm)}
         className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg border border-brand-navy-800 py-1.5 text-sm font-medium text-brand-navy-800 transition hover:bg-brand-navy-800 hover:text-white"
-        title="Adicionar ao primeiro espaço livre"
+        title="Adicionar ao final da fileira"
       >
         + Adicionar
       </button>
