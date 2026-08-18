@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/core';
 import { useConfiguratorStore } from './store/configuratorStore';
 import { WALL_DROPPABLE_ID } from './components/BuildCanvas';
+import { getModuleBand, getBandYRange } from './utils/bands';
 import { AppBackground } from './components/AppBackground';
 import { Header } from './components/Header';
 import { RoomSizeForm } from './components/RoomSizeForm';
@@ -20,8 +21,8 @@ import { FinishHandleSelector } from './components/FinishHandleSelector';
 import { SummaryBar } from './components/SummaryBar';
 
 type DragData =
-  | { type: 'catalog-module'; moduleId: number; widthCm: number; heightCm: number }
-  | { type: 'placed-module'; instanceId: string; widthCm: number; heightCm: number };
+  | { type: 'catalog-module'; moduleId: number; moduleName: string; widthCm: number; heightCm: number }
+  | { type: 'placed-module'; instanceId: string; moduleName: string; widthCm: number; heightCm: number };
 
 function App() {
   const step = useConfiguratorStore((s) => s.step);
@@ -133,7 +134,15 @@ function App() {
     const relativeX = centerX - over.rect.left;
     const relativeY = centerY - over.rect.top;
     const x = relativeX / scale - widthCm / 2;
-    const y = relativeY / scale - heightCm / 2;
+    const rawY = relativeY / scale - heightCm / 2;
+
+    // Módulo de parede não pode passar da bancada pra baixo, módulo de chão
+    // não pode subir acima dela — mesma faixa aplicada de verdade na store
+    // (ver `addModule`/`moveModule`), aqui só pra o indicador "fantasma" já
+    // mostrar o lugar certo em vez de "pular" depois de soltar.
+    const band = getModuleBand(data.moduleName);
+    const { minY, maxY } = getBandYRange(band, room, heightCm);
+    const y = Math.min(maxY, Math.max(minY, rawY));
 
     return { x, y, widthCm, heightCm };
   }
