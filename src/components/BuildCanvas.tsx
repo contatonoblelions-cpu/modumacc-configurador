@@ -7,6 +7,7 @@ import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
 import type { PlacedModule } from '../types/composition';
+import { COUNTERTOP_RATIO } from '../utils/bands';
 
 const CANVAS_MAX_PX = 760;
 /** Altura mínima/máxima do quadrante em px, só pra não ficar minúsculo ou gigante em ambientes muito baixos/altos. */
@@ -35,7 +36,13 @@ function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemo
   const hasPhoto = hasModulePhoto(m.moduleName);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `placed-${m.instanceId}`,
-    data: { type: 'placed-module', instanceId: m.instanceId, widthCm: m.widthCm, heightCm: m.heightCm },
+    data: {
+      type: 'placed-module',
+      instanceId: m.instanceId,
+      moduleName: m.moduleName,
+      widthCm: m.widthCm,
+      heightCm: m.heightCm,
+    },
   });
 
   return (
@@ -210,6 +217,38 @@ export function BuildCanvas() {
             backgroundImage:
               'repeating-linear-gradient(90deg, #c9a06d 0px, #c9a06d 26px, #bb9560 27px, #bb9560 28px), linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0))',
             boxShadow: 'inset 0 3px 4px rgba(0,0,0,0.14)',
+          }}
+        />
+
+        {/*
+          Backsplash + bancada — a linha divisória entre a faixa de módulos
+          de PAREDE (em cima) e a faixa de módulos de CHÃO (embaixo, ver
+          `utils/bands.ts` > `COUNTERTOP_RATIO`), desenhada como um corte
+          humanizado de verdade: um friso de azulejo sutil logo acima da
+          bancada, e a própria bancada como uma faixa mais escura com
+          sombra, igual um tampo de granito/quartzo visto de frente. 100%
+          decorativo — não interfere na posição livre dos módulos, só dá o
+          contexto visual da referência que o cliente mandou.
+        */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0"
+          style={{
+            top: `${Math.max(0, COUNTERTOP_RATIO * 100 - 10)}%`,
+            height: '10%',
+            backgroundImage:
+              'repeating-linear-gradient(90deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px), repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px)',
+            backgroundColor: '#efe9dd',
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0"
+          style={{
+            top: `${COUNTERTOP_RATIO * 100}%`,
+            height: '3%',
+            backgroundImage: 'linear-gradient(180deg, #4a5a63 0%, #33414a 100%)',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15)',
           }}
         />
 
