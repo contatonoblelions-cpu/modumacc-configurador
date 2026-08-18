@@ -202,6 +202,21 @@ export function BuildCanvas() {
         className="relative w-full overflow-hidden rounded-xl border border-brand-silver-200 md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
       >
         {/*
+          Rodateto/moldura de gesso no topo — friso fino com sombra, igual
+          ao acabamento de forro na referência do cliente ("Corte 01 |
+          Humanizado"). 100% decorativo.
+        */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0"
+          style={{
+            height: '1.5%',
+            backgroundColor: '#e8e2d4',
+            boxShadow: '0 2px 3px rgba(0,0,0,0.12)',
+          }}
+        />
+
+        {/*
           "Piso" decorativo — faixa de madeira no rodapé do quadrante, só
           pra dar contexto de parede+chão de cozinha de verdade (pedido do
           cliente, referência tipo planta humanizada do Revit), em vez do
@@ -221,6 +236,22 @@ export function BuildCanvas() {
         />
 
         {/*
+          Sombra do rodapé/rodabase dos módulos de chão — friso escuro bem
+          fino logo acima do piso, dando a profundidade do "recuo" da base
+          dos armários (igual ao sombreado escuro na base dos módulos verdes
+          da referência). 100% decorativo.
+        */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0"
+          style={{
+            bottom: '7%',
+            height: '2%',
+            backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.28) 100%)',
+          }}
+        />
+
+        {/*
           Backsplash + bancada — a linha divisória entre a faixa de módulos
           de PAREDE (em cima) e a faixa de módulos de CHÃO (embaixo, ver
           `utils/bands.ts` > `COUNTERTOP_RATIO`), desenhada como um corte
@@ -230,6 +261,15 @@ export function BuildCanvas() {
           decorativo — não interfere na posição livre dos módulos, só dá o
           contexto visual da referência que o cliente mandou.
         */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0"
+          style={{
+            top: `${Math.max(0, COUNTERTOP_RATIO * 100 - 10.6)}%`,
+            height: '0.6%',
+            backgroundImage: 'linear-gradient(180deg, rgba(255,214,140,0.55) 0%, rgba(255,214,140,0) 100%)',
+          }}
+        />
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0"
