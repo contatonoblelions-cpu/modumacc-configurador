@@ -160,8 +160,25 @@ export function BuildCanvas() {
   const canvasHeight = Math.round(Math.min(CANVAS_MAX_H_PX, Math.max(CANVAS_MIN_H_PX, room.heightCm * scale)));
 
   return (
-    <div ref={wrapperRef} className="order-1 flex-1 overflow-auto p-3 md:order-none md:p-6">
-      <div className="mb-1.5 md:mb-3">
+    <div className="order-1 flex flex-1 overflow-auto p-3 md:order-none md:p-6">
+      {/*
+        Parede lateral esquerda — tira decorativa só no desktop (tem espaço
+        sobrando), dá o contexto de "ambiente" ao redor da parede principal,
+        igual o corte humanizado de referência. NÃO entra no mobile: lá o
+        espaço é curto e prioridade é o quadrante principal ficar o maior
+        possível pra facilitar o arrasto no toque.
+      */}
+      <div
+        aria-hidden="true"
+        className="hidden shrink-0 self-stretch rounded-l-lg md:block"
+        style={{
+          width: 26,
+          backgroundImage: 'linear-gradient(100deg, #ded4bc 0%, #efe8d8 100%)',
+          clipPath: 'polygon(0 6%, 100% 0, 100% 100%, 0 94%)',
+        }}
+      />
+      <div ref={wrapperRef} className="min-w-0 flex-1 px-1 md:px-3">
+        <div className="mb-1.5 md:mb-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-navy-800 md:hidden">
           Área de montagem — escala real (fixa)
         </p>
@@ -319,6 +336,18 @@ export function BuildCanvas() {
           />
         )}
       </div>
+      </div>
+
+      {/* Parede lateral direita — mesma ideia da esquerda, espelhada. */}
+      <div
+        aria-hidden="true"
+        className="hidden shrink-0 self-stretch rounded-r-lg md:block"
+        style={{
+          width: 26,
+          backgroundImage: 'linear-gradient(260deg, #ded4bc 0%, #efe8d8 100%)',
+          clipPath: 'polygon(0 0, 100% 6%, 100% 94%, 0 100%)',
+        }}
+      />
     </div>
   );
 }
