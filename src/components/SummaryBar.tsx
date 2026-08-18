@@ -73,13 +73,22 @@ export function SummaryBar() {
         </svg>
       </div>
       {step === 'build' ? (
-        <button
-          onClick={goToReview}
-          disabled={!canProceed}
-          className="w-full rounded-lg bg-brand-navy-800 px-6 py-3 font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:w-auto"
-        >
-          Próximo passo →
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          {/*
+            Botão "Visualizar em 3D" já aparece aqui, durante a montagem —
+            não só depois de "Próximo passo" — porque o pedido do cliente foi
+            justamente esse: ver o resultado com IA a qualquer momento
+            enquanto está montando, sem precisar avançar de etapa primeiro.
+          */}
+          <AiVisualization />
+          <button
+            onClick={goToReview}
+            disabled={!canProceed}
+            className="w-full rounded-lg bg-brand-navy-800 px-6 py-3 font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:w-auto"
+          >
+            Próximo passo →
+          </button>
+        </div>
       ) : (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <AiVisualization />
