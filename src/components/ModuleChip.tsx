@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core';
 import type { CatalogModule } from '../types/catalog';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
+import { IsoBevel } from './IsoBevel';
 
 interface Props {
   module: CatalogModule;
@@ -47,33 +48,38 @@ export function ModuleChip({ module }: Props) {
   });
 
   return (
-    <button
-      type="button"
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      onClick={() => addModule(module, widthCm)}
-      className={`relative flex h-[72px] w-[76px] shrink-0 flex-col items-center justify-end gap-0.5 overflow-hidden rounded-lg px-1.5 pb-1 text-center text-white shadow-sm transition active:scale-95 md:hidden ${
-        hasPhoto ? '' : 'bg-brand-navy-800'
-      } ${isDragging ? 'opacity-40' : ''}`}
-      title={`Adicionar ${module.name}`}
-    >
-      {hasPhoto && (
-        <ModulePhoto name={module.name} finish={finish} className="absolute inset-0 h-full w-full" />
-      )}
-      {hasPhoto && (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0"
-          style={{
-            backgroundImage: 'linear-gradient(180deg, rgba(15,30,45,0) 45%, rgba(10,20,32,0.8) 100%)',
-          }}
-        />
-      )}
-      <span className="relative z-10 line-clamp-2 text-[11px] font-medium leading-tight drop-shadow-sm">
-        {module.name}
-      </span>
-      <span className="relative z-10 text-[10px] text-brand-silver-300 drop-shadow-sm">{widthCm}cm</span>
-    </button>
+    // Wrapper só pra IsoBevel (chanfro 3D) vazar por cima/direita — o botão
+    // em si continua com `overflow-hidden` (precisa, pra recortar a foto).
+    <div className="relative shrink-0 md:hidden">
+      <IsoBevel depth={5} />
+      <button
+        type="button"
+        ref={setNodeRef}
+        {...listeners}
+        {...attributes}
+        onClick={() => addModule(module, widthCm)}
+        className={`relative flex h-[72px] w-[76px] flex-col items-center justify-end gap-0.5 overflow-hidden rounded-lg px-1.5 pb-1 text-center text-white shadow-sm transition active:scale-95 ${
+          hasPhoto ? '' : 'bg-brand-navy-800'
+        } ${isDragging ? 'opacity-40' : ''}`}
+        title={`Adicionar ${module.name}`}
+      >
+        {hasPhoto && (
+          <ModulePhoto name={module.name} finish={finish} className="absolute inset-0 h-full w-full" />
+        )}
+        {hasPhoto && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{
+              backgroundImage: 'linear-gradient(180deg, rgba(15,30,45,0) 45%, rgba(10,20,32,0.8) 100%)',
+            }}
+          />
+        )}
+        <span className="relative z-10 line-clamp-2 text-[11px] font-medium leading-tight drop-shadow-sm">
+          {module.name}
+        </span>
+        <span className="relative z-10 text-[10px] text-brand-silver-300 drop-shadow-sm">{widthCm}cm</span>
+      </button>
+    </div>
   );
 }
