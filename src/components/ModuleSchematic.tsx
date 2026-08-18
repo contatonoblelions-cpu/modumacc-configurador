@@ -12,6 +12,14 @@ interface Props {
    * antigo (cinza), então isso é sempre opcional.
    */
   finishImageUrl?: string | null;
+  /**
+   * Cor do puxador selecionado (ver `utils/handleColors.ts`) — quando
+   * presente, colore o puxador desenhado (o traço/retângulo pequeno que
+   * representa a alça) com um tom aproximado do metal real (Alumínio
+   * prateado, Bronze dourado-escuro). `undefined`/`null` mantém a cor
+   * padrão antiga (azul-marinho escuro).
+   */
+  handleColor?: { fill: string; stroke: string } | null;
 }
 
 /**
@@ -28,10 +36,12 @@ interface Props {
  * `BuildCanvas.tsx`), entao a propria proporcao do desenho ja comunica se e
  * uma peca larga ou estreita.
  */
-export function ModuleSchematic({ name, className, finishImageUrl }: Props) {
+export function ModuleSchematic({ name, className, finishImageUrl, handleColor }: Props) {
   const { type, count } = parseModuleVisual(name);
   const patternId = useId();
   const fill = finishImageUrl ? `url(#${patternId})` : '#F5F7F7';
+  const handleFill = handleColor?.fill ?? '#1A3F61';
+  const handleStroke = handleColor?.stroke;
 
   return (
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className={className} aria-hidden="true">
@@ -43,17 +53,22 @@ export function ModuleSchematic({ name, className, finishImageUrl }: Props) {
         </defs>
       )}
       <rect x="0" y="0" width="100" height="100" fill="#F5F7F7" />
-      {type === 'porta' && <Portas count={count} fill={fill} />}
-      {type === 'gaveta' && <Gavetas count={count} fill={fill} />}
+      {type === 'porta' && <Portas count={count} fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
+      {type === 'gaveta' && <Gavetas count={count} fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
       {type === 'nicho' && <Nicho fill={fill} />}
-      {type === 'microondas' && <Microondas fill={fill} />}
+      {type === 'microondas' && <Microondas fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
       {type === 'basculante' && <Basculante fill={fill} />}
       {type === 'generic' && <Generic fill={fill} />}
     </svg>
   );
 }
 
-function Portas({ count, fill }: { count: number; fill: string }) {
+interface HandleProps {
+  handleFill: string;
+  handleStroke?: string;
+}
+
+function Portas({ count, fill, handleFill, handleStroke }: { count: number; fill: string } & HandleProps) {
   const n = Math.max(1, count);
   const panelWidth = 96 / n;
   return (
@@ -67,7 +82,16 @@ function Portas({ count, fill }: { count: number; fill: string }) {
         return (
           <g key={i}>
             <rect x={x} y={2} width={panelWidth - 1} height={96} fill={fill} stroke="#2E5A79" strokeWidth={2.5} />
-            <rect x={handleX} y={46} width={3} height={10} rx={1.5} fill="#1A3F61" />
+            <rect
+              x={handleX}
+              y={46}
+              width={3}
+              height={10}
+              rx={1.5}
+              fill={handleFill}
+              stroke={handleStroke}
+              strokeWidth={handleStroke ? 0.5 : 0}
+            />
           </g>
         );
       })}
@@ -75,7 +99,7 @@ function Portas({ count, fill }: { count: number; fill: string }) {
   );
 }
 
-function Gavetas({ count, fill }: { count: number; fill: string }) {
+function Gavetas({ count, fill, handleFill, handleStroke }: { count: number; fill: string } & HandleProps) {
   const n = Math.max(1, count);
   const panelHeight = 96 / n;
   return (
@@ -85,7 +109,16 @@ function Gavetas({ count, fill }: { count: number; fill: string }) {
         return (
           <g key={i}>
             <rect x={2} y={y} width={96} height={panelHeight - 1} fill={fill} stroke="#2E5A79" strokeWidth={2.5} />
-            <rect x={40} y={y + panelHeight / 2 - 1.5} width={20} height={3} rx={1.5} fill="#1A3F61" />
+            <rect
+              x={40}
+              y={y + panelHeight / 2 - 1.5}
+              width={20}
+              height={3}
+              rx={1.5}
+              fill={handleFill}
+              stroke={handleStroke}
+              strokeWidth={handleStroke ? 0.5 : 0}
+            />
           </g>
         );
       })}
@@ -102,13 +135,13 @@ function Nicho({ fill }: { fill: string }) {
   );
 }
 
-function Microondas({ fill }: { fill: string }) {
+function Microondas({ fill, handleFill, handleStroke }: { fill: string } & HandleProps) {
   return (
     <>
       <rect x="2" y="2" width="96" height="96" fill={fill} stroke="#2E5A79" strokeWidth={2.5} />
       <rect x="16" y="28" width="68" height="44" rx="3" fill="#DCE3E4" stroke="#3D6D8F" strokeWidth={2} />
       <rect x="22" y="34" width="42" height="32" fill="#B4C2C4" />
-      <circle cx="74" cy="50" r="4" fill="#1A3F61" />
+      <circle cx="74" cy="50" r="4" fill={handleFill} stroke={handleStroke} strokeWidth={handleStroke ? 0.5 : 0} />
     </>
   );
 }
