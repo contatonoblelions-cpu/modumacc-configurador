@@ -1,7 +1,7 @@
 import { useDraggable } from '@dnd-kit/core';
 import type { CatalogModule } from '../types/catalog';
 import { useConfiguratorStore } from '../store/configuratorStore';
-import { getFinishSwatch } from '../utils/finishSwatches';
+import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
 
 interface Props {
   module: CatalogModule;
@@ -13,11 +13,11 @@ interface Props {
  * completo escondido no mobile — os dois ficam montados ao mesmo tempo,
  * cada um com seu próprio `id` de drag, e o CSS decide qual aparece).
  *
- * Sem imagem, sem preço, sem seletor de largura, sem botão separado: um
- * chip pequeno com nome + largura, que já entra na parede com um
- * toque (usa a primeira largura disponível) ou com um arrasto — igual ao
- * mockup de referência. Trocar a largura depois de já colocado fica pra uma
- * iteração futura, se for necessário.
+ * Sem preço, sem seletor de largura, sem botão separado: um chip pequeno
+ * com foto + nome + largura, que já entra na parede com um toque (usa a
+ * primeira largura disponível) ou com um arrasto — igual ao mockup de
+ * referência. Trocar a largura depois de já colocado fica pra uma iteração
+ * futura, se for necessário.
  *
  * PROPOSITALMENTE sem `touch-action: none` aqui — a faixa (`ModulePanel.tsx`)
  * rola na horizontal, e travar o touch-action bloquearia esse deslize
@@ -28,16 +28,18 @@ interface Props {
  * do `TouchSensor` em `App.tsx` — é o próprio dnd-kit que decide, sem
  * precisar bloquear o touch-action.
  *
- * Fundo: foto do acabamento selecionado (ver `utils/finishSwatches.ts`) —
- * o chip mostra o material de verdade (cor/textura), não mais uma caixa
- * azul-marinho genérica. Sem acabamento resolvido ainda, cai de volta pro
- * azul-marinho (`bg-brand-navy-800`) como fallback.
+ * Fundo: foto REAL do formato da peça (ver `utils/modulePhotos.ts` e
+ * `ModulePhoto.tsx`) — já de cara mostra como o produto é montado/vendido,
+ * mesmo antes do cliente escolher um acabamento. Depois que ele escolhe a
+ * cor, a mesma foto já aparece na cor certa (ver `ModulePhoto.tsx`). Pra
+ * módulos sem foto mapeada ainda, cai de volta pro azul-marinho
+ * (`bg-brand-navy-800`) como fallback.
  */
 export function ModuleChip({ module }: Props) {
   const addModule = useConfiguratorStore((s) => s.addModule);
   const finish = useConfiguratorStore((s) => s.finish);
   const widthCm = module.availableWidths[0] ?? 0;
-  const finishImageUrl = getFinishSwatch(finish);
+  const hasPhoto = hasModulePhoto(module.name);
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `catalog-mobile-${module.id}-${widthCm}`,
@@ -51,22 +53,27 @@ export function ModuleChip({ module }: Props) {
       {...listeners}
       {...attributes}
       onClick={() => addModule(module, widthCm)}
-      style={
-        finishImageUrl
-          ? {
-              backgroundImage: `linear-gradient(180deg, rgba(15,30,45,0.15) 0%, rgba(10,20,32,0.75) 100%), url(${finishImageUrl})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }
-          : undefined
-      }
-      className={`flex h-[72px] w-[76px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1.5 text-center text-white shadow-sm transition active:scale-95 md:hidden ${
-        finishImageUrl ? '' : 'bg-brand-navy-800'
+      className={`relative flex h-[72px] w-[76px] shrink-0 flex-col items-center justify-end gap-0.5 overflow-hidden rounded-lg px-1.5 pb-1 text-center text-white shadow-sm transition active:scale-95 md:hidden ${
+        hasPhoto ? '' : 'bg-brand-navy-800'
       } ${isDragging ? 'opacity-40' : ''}`}
       title={`Adicionar ${module.name}`}
     >
-      <span className="line-clamp-2 text-[11px] font-medium leading-tight drop-shadow-sm">{module.name}</span>
-      <span className="text-[10px] text-brand-silver-300 drop-shadow-sm">{widthCm}cm</span>
+      {hasPhoto && (
+        <ModulePhoto name={module.name} finish={finish} className="absolute inset-0 h-full w-full" />
+      )}
+      {hasPhoto && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'linear-gradient(180deg, rgba(15,30,45,0) 45%, rgba(10,20,32,0.8) 100%)',
+          }}
+        />
+      )}
+      <span className="relative z-10 line-clamp-2 text-[11px] font-medium leading-tight drop-shadow-sm">
+        {module.name}
+      </span>
+      <span className="relative z-10 text-[10px] text-brand-silver-300 drop-shadow-sm">{widthCm}cm</span>
     </button>
   );
 }
