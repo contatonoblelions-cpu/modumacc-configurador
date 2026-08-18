@@ -4,6 +4,7 @@ import { useConfiguratorStore } from '../store/configuratorStore';
 import { formatBRL } from '../api/parseAttributes';
 import { ModuleSchematic } from './ModuleSchematic';
 import { getFinishSwatch } from '../utils/finishSwatches';
+import { getHandleColor } from '../utils/handleColors';
 import type { PlacedModule } from '../types/composition';
 
 const CANVAS_MAX_PX = 760;
@@ -18,6 +19,7 @@ interface PlacedModuleBoxProps {
   m: PlacedModule;
   scale: number;
   finishImageUrl: string | null;
+  handleColor: { fill: string; stroke: string } | null;
   onRemove: (instanceId: string) => void;
 }
 
@@ -27,7 +29,7 @@ interface PlacedModuleBoxProps {
  * arrastável, pra reposicionar em qualquer ponto do quadrante sem precisar
  * remover e adicionar de novo — como mover uma peça de lego pelo tabuleiro.
  */
-function PlacedModuleBox({ m, scale, finishImageUrl, onRemove }: PlacedModuleBoxProps) {
+function PlacedModuleBox({ m, scale, finishImageUrl, handleColor, onRemove }: PlacedModuleBoxProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `placed-${m.instanceId}`,
     data: { type: 'placed-module', instanceId: m.instanceId, widthCm: m.widthCm, heightCm: m.heightCm },
@@ -74,7 +76,12 @@ function PlacedModuleBox({ m, scale, finishImageUrl, onRemove }: PlacedModuleBox
           <span className="text-[9px] text-brand-silver-600">{m.widthCm}cm</span>
         </div>
         <div className="hidden h-full w-full overflow-hidden rounded-md border border-brand-silver-300 bg-white md:block">
-          <ModuleSchematic name={m.moduleName} finishImageUrl={finishImageUrl} className="h-2/3 w-full" />
+          <ModuleSchematic
+            name={m.moduleName}
+            finishImageUrl={finishImageUrl}
+            handleColor={handleColor}
+            className="h-2/3 w-full"
+          />
           <div className="px-1 text-center">
             <p className="truncate text-[11px] text-brand-silver-700">{m.moduleName}</p>
             <p className="text-[11px] font-medium text-brand-navy-800">{m.widthCm}cm</p>
@@ -113,6 +120,8 @@ export function BuildCanvas() {
   const dragPreview = useConfiguratorStore((s) => s.dragPreview);
   const finish = useConfiguratorStore((s) => s.finish);
   const finishImageUrl = getFinishSwatch(finish);
+  const handle = useConfiguratorStore((s) => s.handle);
+  const handleColor = getHandleColor(handle);
 
   const { setNodeRef } = useDroppable({ id: WALL_DROPPABLE_ID });
 
@@ -177,6 +186,7 @@ export function BuildCanvas() {
             m={m}
             scale={scale}
             finishImageUrl={finishImageUrl}
+            handleColor={handleColor}
             onRemove={removeModule}
           />
         ))}
