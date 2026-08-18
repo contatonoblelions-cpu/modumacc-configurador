@@ -3,7 +3,7 @@ import type { CatalogModule } from '../types/catalog';
 import type { PlacedModule, RoomDimensions } from '../types/composition';
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { buildRenderModules, generateRender } from '../api/generateRender';
-import { repackBands, reorderInBand } from '../utils/bands';
+import { resolvePositionCm, packedPositionCm } from '../utils/placement';
 
 type Step = 'room' | 'build' | 'review';
 
@@ -66,17 +66,17 @@ interface ConfiguratorState {
   /** Volta da revisão pra tela de montagem (com o painel de módulos de novo). */
   backToBuildStep: () => void;
   /**
-   * A fileira (parede/"superior" ou chão/"base", ver `utils/bands.ts`) é
-   * SEMPRE decidida pelo tipo do módulo — não é mais escolha livre. `position`
-   * só usa o `x` (cm), como dica de ONDE dentro da fileira ele deve entrar:
-   * omitido, vai pro final dela (botão "+ Adicionar", deep-link); informado
-   * (soltar arrastando do catálogo), entra colado na posição mais perto
-   * daquele X, empurrando os outros da mesma fileira (ver `reorderInBand`).
+   * `position` é o ponto (X, Y) LIVRE onde o módulo entra, em cm a partir do
+   * canto superior esquerdo do espaço — omitido, entra no primeiro canto
+   * livre (usado pelo botão "+ Adicionar" e pelo deep-link); informado,
+   * entra o mais perto possível dali, sem sobrepor outro módulo (ver
+   * `resolvePositionCm` em `utils/placement.ts`) — usado ao soltar um
+   * módulo arrastado do catálogo em qualquer ponto do quadrante.
    */
   addModule: (mod: CatalogModule, widthCm: number, position?: { x: number; y: number }) => void;
   removeModule: (instanceId: string) => void;
-  /** Reordena um módulo já colocado DENTRO da própria fileira, pro X mais perto de onde foi solto (ver `utils/bands.ts` > `reorderInBand`). */
-  moveModule: (instanceId: string, targetXCm: number, targetYCm?: number) => void;
+  /** Reposiciona um módulo já colocado pra um ponto (X, Y) livre específico do quadrante (arrastar-e-soltar). */
+  moveModule: (instanceId: string, targetXCm: number, targetYCm: number) => void;
   /** Atualiza o indicador de posição em tempo real durante o arrasto (ver `DragPreview`). */
   setDragPreview: (preview: DragPreview | null) => void;
   setFinish: (finish: string) => void;
@@ -136,6 +136,18 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   addModule: (mod, widthCm, position) => {
     const room = get().room;
     if (!room) return;
+    const size = { widthCm, heightCm: mod.heightCm };
+    const others = get().modules.map((m) => ({
+      x: m.offsetXCm,
+      y: m.offsetYCm,
+      widthCm: m.widthCm,
+      heightCm: m.heightCm,
+    }));
+    const packed = packedPositionCm(others, size, room);
+    // Sem ponto explícito -> primeiro canto livre (botão "+ Adicionar",
+    // deep-link). Com ponto explícito (soltar arrastando) -> resolve pro
+    // ponto livre mais próximo de onde o dedo soltou, sem sobrepor ninguém.
+    const resolved = position === undefined ? packed : resolvePositionCm(others, position, size, room, packed);
 
     const placed: PlacedModule = {
       instanceId: `inst-${++instanceCounter}`,
@@ -145,33 +157,37 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       widthCm,
       heightCm: mod.heightCm,
       basePriceCents: mod.minPriceCents,
-      offsetXCm: 0,
-      offsetYCm: 0,
+      offsetXCm: resolved.x,
+      offsetYCm: resolved.y,
     };
-
-    // Sem ponto explícito -> vai pro FINAL da fileira certa (parede ou
-    // chão, ver `utils/bands.ts`) — usado pelo botão "+ Adicionar" e pelo
-    // deep-link. Com ponto explícito (soltar arrastando) -> entra na
-    // fileira já colado, na posição mais perto de onde soltou (mesmo
-    // `reorderInBand` usado por `moveModule`, aplicado ao módulo recém-
-    // criado antes do repack).
-    const withNew = [...get().modules, placed];
-    const ordered = position === undefined ? withNew : reorderInBand(withNew, placed.instanceId, position.x);
-    set({ modules: repackBands(ordered, room) });
+    set({ modules: [...get().modules, placed] });
     void get().resolveComposition();
   },
 
-  removeModule: (instanceId) => {
-    const room = get().room;
-    const remaining = get().modules.filter((m) => m.instanceId !== instanceId);
-    set({ modules: room ? repackBands(remaining, room) : remaining });
-  },
+  removeModule: (instanceId) =>
+    set({ modules: get().modules.filter((m) => m.instanceId !== instanceId) }),
 
-  moveModule: (instanceId, targetXCm) => {
+  moveModule: (instanceId, targetXCm, targetYCm) => {
+    const modules = get().modules;
+    const item = modules.find((m) => m.instanceId === instanceId);
+    if (!item) return;
     const room = get().room;
     if (!room) return;
-    const reordered = reorderInBand(get().modules, instanceId, targetXCm);
-    set({ modules: repackBands(reordered, room) });
+    const others = modules
+      .filter((m) => m.instanceId !== instanceId)
+      .map((m) => ({ x: m.offsetXCm, y: m.offsetYCm, widthCm: m.widthCm, heightCm: m.heightCm }));
+    const resolved = resolvePositionCm(
+      others,
+      { x: targetXCm, y: targetYCm },
+      { widthCm: item.widthCm, heightCm: item.heightCm },
+      room,
+      { x: item.offsetXCm, y: item.offsetYCm },
+    );
+    set({
+      modules: modules.map((m) =>
+        m.instanceId === instanceId ? { ...m, offsetXCm: resolved.x, offsetYCm: resolved.y } : m,
+      ),
+    });
   },
 
   setDragPreview: (preview) => set({ dragPreview: preview }),
