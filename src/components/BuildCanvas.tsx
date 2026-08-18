@@ -31,6 +31,14 @@ interface PlacedModuleBoxProps {
  * (`left`/`top` vêm direto de `m.offsetXCm/offsetYCm * scale`). Também é
  * arrastável, pra reposicionar em qualquer ponto do quadrante sem precisar
  * remover e adicionar de novo — como mover uma peça de lego pelo tabuleiro.
+ *
+ * Visual "painel contínuo" (pedido do cliente, referência "Corte 01 |
+ * Humanizado"): a foto real do módulo preenche a caixa INTEIRA, sem borda
+ * branca nem cantos arredondados — os módulos ficam colados uns nos outros
+ * como armários de verdade instalados lado a lado, em vez de "cards"
+ * separados. Nome, largura e preço ficam escondidos por padrão e só
+ * aparecem num overlay ao passar o mouse/tocar (igual o botão de remover já
+ * funcionava), pra não poluir a parede.
  */
 function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemove }: PlacedModuleBoxProps) {
   const hasPhoto = hasModulePhoto(m.moduleName);
@@ -54,64 +62,35 @@ function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemo
         width: m.widthCm * scale,
         height: m.heightCm * scale,
       }}
-      className={`group absolute bg-brand-bg transition ${isDragging ? 'opacity-30' : ''}`}
+      className={`group absolute overflow-hidden ring-1 ring-black/10 transition ${isDragging ? 'z-20 opacity-30 ring-2 ring-brand-navy-400' : ''}`}
     >
       <div
         {...listeners}
         {...attributes}
-        className="h-full w-full touch-none cursor-grab active:cursor-grabbing"
+        className="relative h-full w-full touch-none cursor-grab active:cursor-grabbing"
       >
-        {/*
-          Mobile: foto REAL do formato (ver `utils/modulePhotos.ts` e
-          `ModulePhoto.tsx`) preenchendo a caixa toda, com nome/largura por
-          cima — bate com o mockup de referência e cabe em módulos
-          pequenos. Sem foto mapeada ainda pra esse formato, cai pro texto
-          simples com fundo do acabamento (visual antigo). Desktop: mesma
-          lógica, mas com a foto ocupando 2/3 de cima e o texto embaixo,
-          igual já era com o desenho esquemático.
-        */}
-        <div className="relative h-full w-full overflow-hidden rounded-md border border-brand-silver-300 bg-white md:hidden">
-          {hasPhoto ? (
-            <ModulePhoto name={m.moduleName} finish={finish} className="absolute inset-0 h-full w-full" />
-          ) : (
-            <div
-              style={
-                finishImageUrl
-                  ? {
-                      backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.75) 100%), url(${finishImageUrl})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }
-                  : undefined
-              }
-              className="absolute inset-0"
-            />
-          )}
-          <div className="absolute inset-0 flex flex-col items-center justify-end gap-0.5 px-1 pb-0.5 text-center">
-            <span className="line-clamp-2 rounded bg-white/80 px-0.5 text-[10px] font-medium leading-tight text-brand-navy-800">
-              {m.moduleName}
-            </span>
-            <span className="rounded bg-white/80 px-0.5 text-[9px] text-brand-silver-600">{m.widthCm}cm</span>
-          </div>
-        </div>
-        <div className="hidden h-full w-full overflow-hidden rounded-md border border-brand-silver-300 bg-white md:block">
-          {hasPhoto ? (
-            <ModulePhoto name={m.moduleName} finish={finish} className="h-2/3 w-full" />
-          ) : (
-            <ModuleSchematic
-              name={m.moduleName}
-              finishImageUrl={finishImageUrl}
-              handleColor={handleColor}
-              className="h-2/3 w-full"
-            />
-          )}
-          <div className="px-1 text-center">
-            <p className="truncate text-[11px] text-brand-silver-700">{m.moduleName}</p>
-            <p className="text-[11px] font-medium text-brand-navy-800">{m.widthCm}cm</p>
-            <p className="truncate text-[11px] text-brand-silver-600">
-              {formatBRL(m.resolvedPriceCents ?? m.basePriceCents)}
-            </p>
-          </div>
+        {hasPhoto ? (
+          <ModulePhoto name={m.moduleName} finish={finish} className="absolute inset-0 h-full w-full" />
+        ) : (
+          <ModuleSchematic
+            name={m.moduleName}
+            finishImageUrl={finishImageUrl}
+            handleColor={handleColor}
+            className="absolute inset-0 h-full w-full"
+          />
+        )}
+
+        {/* Rótulo (nome + largura + preço) escondido por padrão, só aparece no hover/toque — mantém a parede limpa, igual a referência. */}
+        <div
+          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end gap-0.5 px-1 pb-1 text-center opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100"
+          style={{ backgroundImage: 'linear-gradient(180deg, rgba(15,30,45,0) 55%, rgba(10,20,32,0.75) 100%)' }}
+        >
+          <span className="line-clamp-2 text-[10px] font-medium leading-tight text-white drop-shadow-sm md:text-[11px]">
+            {m.moduleName}
+          </span>
+          <span className="text-[9px] text-brand-silver-200 drop-shadow-sm md:text-[10px]">
+            {m.widthCm}cm · {formatBRL(m.resolvedPriceCents ?? m.basePriceCents)}
+          </span>
         </div>
       </div>
       <button
