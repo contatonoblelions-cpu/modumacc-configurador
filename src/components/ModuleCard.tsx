@@ -5,6 +5,7 @@ import { formatBRL } from '../api/parseAttributes';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { ModuleSchematic } from './ModuleSchematic';
 import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
+import { IsoBevel } from './IsoBevel';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
 
@@ -17,11 +18,11 @@ interface Props {
  * (`hidden md:block`; no mobile quem aparece é o `ModuleChip.tsx`, mais
  * compacto, renderizado ao lado deste em `ModulePanel.tsx`). Tem seletor de
  * largura quando há mais de uma opção. Duas formas de colocar na parede:
- * 1. Arrastar (pega pela imagem/nome) até QUALQUER ponto da faixa certa
- *    (parede ou chão, conforme o tipo do módulo) — posição livre em X e Y
- *    dentro dela (ver `utils/placement.ts` e `utils/bands.ts`).
- * 2. Tocar em "+ Adicionar", que joga o módulo no primeiro canto livre da
- *    faixa — atalho mais rápido quando a posição exata não importa.
+ * 1. Arrastar (pega pela imagem/nome) até QUALQUER ponto do quadrante —
+ *    posição totalmente livre em X e Y, sem fileira ou categoria fixa (ver
+ *    `utils/placement.ts`).
+ * 2. Tocar em "+ Adicionar", que joga o módulo no primeiro canto livre —
+ *    atalho mais rápido quando a posição exata não importa.
  */
 export function ModuleCard({ module }: Props) {
   const [widthCm, setWidthCm] = useState(module.availableWidths[0] ?? 0);
@@ -49,16 +50,20 @@ export function ModuleCard({ module }: Props) {
         className="touch-none cursor-grab active:cursor-grabbing"
         title="Arraste até a parede, na posição que quiser"
       >
-        {hasModulePhoto(module.name) ? (
-          <ModulePhoto name={module.name} finish={finish} className="mb-2 h-24 w-full rounded-lg" />
-        ) : (
-          <ModuleSchematic
-            name={module.name}
-            finishImageUrl={finishImageUrl}
-            handleColor={handleColor}
-            className="mb-2 h-24 w-full rounded-lg"
-          />
-        )}
+        {/* Wrapper com overflow visível só pra IsoBevel (chanfro 3D) conseguir vazar por cima/direita — o corte da foto continua acontecendo dentro do próprio ModulePhoto/ModuleSchematic (`rounded-lg` + overflow-hidden interno deles). */}
+        <div className="relative mb-2 h-24 w-full">
+          <IsoBevel depth={5} />
+          {hasModulePhoto(module.name) ? (
+            <ModulePhoto name={module.name} finish={finish} className="h-full w-full rounded-lg" />
+          ) : (
+            <ModuleSchematic
+              name={module.name}
+              finishImageUrl={finishImageUrl}
+              handleColor={handleColor}
+              className="h-full w-full rounded-lg"
+            />
+          )}
+        </div>
         <p className="text-sm font-medium text-brand-navy-800">{module.name}</p>
       </div>
 
