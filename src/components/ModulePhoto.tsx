@@ -23,7 +23,20 @@ interface Props {
  * Devolve `null` quando não existe foto pra esse formato ainda (módulos
  * fora dos 9 formatos mapeados) — quem chama deve cair no
  * `ModuleSchematic.tsx` (desenho) nesse caso.
+ *
+ * As 9 fotos-fonte (ver `utils/modulePhotos.ts`) vieram de um gerador de
+ * "foto de produto de catálogo" — móvel isolado, levemente em ângulo, com
+ * margem de fundo branco em volta e (nos gaveteiros) até um tampo/pézinhos
+ * soltos por cima/embaixo do móvel. Isso sobra como fundo/borda visível
+ * quando a foto preenche a caixa do módulo colada nas outras (pedido do
+ * cliente: painel contínuo, sem sobra). `PHOTO_ZOOM` dá um zoom extra por
+ * CIMA do `object-cover` padrão, cortando a margem de fundo nas bordas —
+ * não resolve o ângulo 3D do basculante nem o tampo do gaveteiro por
+ * completo (isso exigiria recriar as fotos do zero), mas reduz bastante a
+ * sobra visível ao redor de cada módulo.
  */
+const PHOTO_ZOOM = 1.45;
+
 export function ModulePhoto({ name, finish, className }: Props) {
   const photoUrl = getModulePhoto(name);
   if (!photoUrl) return null;
@@ -36,7 +49,10 @@ export function ModulePhoto({ name, finish, className }: Props) {
         src={photoUrl}
         alt={name}
         className="h-full w-full object-cover"
-        style={finishImageUrl ? { filter: 'grayscale(1) brightness(1.2) contrast(0.9)' } : undefined}
+        style={{
+          transform: `scale(${PHOTO_ZOOM})`,
+          ...(finishImageUrl ? { filter: 'grayscale(1) brightness(1.2) contrast(0.9)' } : {}),
+        }}
       />
       {finishImageUrl && (
         <div
@@ -58,4 +74,3 @@ export function ModulePhoto({ name, finish, className }: Props) {
 export function hasModulePhoto(name: string): boolean {
   return getModulePhoto(name) !== null;
 }
-
