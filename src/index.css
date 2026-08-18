@@ -17,6 +17,14 @@
   --color-brand-silver-400: #B4C2C4;
   --color-brand-silver-200: #DCE3E4;
   --color-brand-bg: #F5F7F7;
+  /**
+   * Dourado/bronze — usado só no botão "Visualizar em 3D" (ver
+   * AiVisualization.tsx), pra ele se destacar visualmente dos botões navy
+   * padrão (Próximo passo / Adicionar ao carrinho) como um recurso especial,
+   * não mais um botão secundário igual aos outros.
+   */
+  --color-brand-accent-700: #A9752E;
+  --color-brand-accent-800: #8F6224;
 }
 
 html, body, #root {
@@ -31,11 +39,11 @@ body {
 }
 
 /**
-* Fundo decorativo animado (ver components/AppBackground.tsx): manchas de
-* gradiente nos tons da marca (navy/silver) flutuando bem devagar, por trás
-* de uma grade sutil estilo "planta baixa" — remete ao processo de projetar
-* um ambiente, sem competir com o conteúdo (opacidade baixa, sem interação).
-*/
+ * Fundo decorativo animado (ver components/AppBackground.tsx): manchas de
+ * gradiente nos tons da marca (navy/silver) flutuando bem devagar, por trás
+ * de uma grade sutil estilo "planta baixa" — remete ao processo de projetar
+ * um ambiente, sem competir com o conteúdo (opacidade baixa, sem interação).
+ */
 @keyframes drift-a {
   0%, 100% { transform: translate(0, 0) scale(1); }
   50% { transform: translate(5%, -6%) scale(1.08); }
