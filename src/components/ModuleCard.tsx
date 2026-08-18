@@ -4,6 +4,7 @@ import type { CatalogModule } from '../types/catalog';
 import { formatBRL } from '../api/parseAttributes';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { ModuleSchematic } from './ModuleSchematic';
+import { getFinishSwatch } from '../utils/finishSwatches';
 
 interface Props {
   module: CatalogModule;
@@ -23,6 +24,8 @@ interface Props {
 export function ModuleCard({ module }: Props) {
   const [widthCm, setWidthCm] = useState(module.availableWidths[0] ?? 0);
   const addModule = useConfiguratorStore((s) => s.addModule);
+  const finish = useConfiguratorStore((s) => s.finish);
+  const finishImageUrl = getFinishSwatch(finish);
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `catalog-${module.id}-${widthCm}`,
@@ -42,7 +45,7 @@ export function ModuleCard({ module }: Props) {
         className="touch-none cursor-grab active:cursor-grabbing"
         title="Arraste até a parede, na posição que quiser"
       >
-        <ModuleSchematic name={module.name} className="mb-2 h-24 w-full rounded-lg" />
+        <ModuleSchematic name={module.name} finishImageUrl={finishImageUrl} className="mb-2 h-24 w-full rounded-lg" />
         <p className="text-sm font-medium text-brand-navy-800">{module.name}</p>
       </div>
 
@@ -73,7 +76,7 @@ export function ModuleCard({ module }: Props) {
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => addModule(module, widthCm)}
         className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg border border-brand-navy-800 py-1.5 text-sm font-medium text-brand-navy-800 transition hover:bg-brand-navy-800 hover:text-white"
-        title="Adicionar ao final da fileira"
+        title="Adicionar ao primeiro espaço livre"
       >
         + Adicionar
       </button>
