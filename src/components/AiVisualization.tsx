@@ -5,16 +5,18 @@ import { PhotoCollage } from './PhotoCollage';
 type Tab = 'collage' | 'ai';
 
 /**
- * Botão "Ver visualização" + modal com DUAS formas de ver a composição em
+ * Botão "Visualizar em 3D" + modal com DUAS formas de ver a composição em
  * cima da foto do ambiente:
- * 1. "Colagem" (aba padrão, `PhotoCollage.tsx`) — cola as fotos reais dos
- *    módulos direto na foto, na posição exata montada. Instantâneo, sem
- *    custo de IA, sem "reinvenção" — é o que foi montado, ponto.
- * 2. "Com IA" (aba antiga, única versão que existia antes) — manda tudo pro
- *    Gemini (`generateAiRender` na store) recriar a cena com luz/sombra
- *    realista. Mais bonito, mas a IA só tenta imitar a posição/proporção
- *    exata, não garante — por isso agora é o refinamento OPCIONAL em cima
- *    da colagem precisa, não o único jeito de ver o resultado.
+ * 1. "Com IA" (aba padrão ao abrir, é o ponto principal do botão) — manda
+ *    tudo pro Gemini (`generateAiRender` na store: acabamento/madeira, cor
+ *    do puxador, e nome+medidas de cada módulo colocado — ver
+ *    `api/generateRender.ts` e `api/generate-render.ts` no backend) recriar
+ *    a cena com luz/sombra realista, como se fosse a cozinha já pronta.
+ *    Clicar no botão já dispara a geração automaticamente, sem passo extra.
+ * 2. "Colagem" (aba secundária, `PhotoCollage.tsx`) — cola as fotos reais
+ *    dos módulos direto na foto, na posição exata montada. Instantâneo, sem
+ *    custo de IA — útil como conferência rápida antes/depois de gerar a
+ *    versão com IA, ou caso a IA demore/erre.
  */
 export function AiVisualization() {
   const roomPhoto = useConfiguratorStore((s) => s.roomPhoto);
@@ -23,13 +25,16 @@ export function AiVisualization() {
   const generateAiRender = useConfiguratorStore((s) => s.generateAiRender);
 
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>('collage');
+  const [tab, setTab] = useState<Tab>('ai');
 
   const canOpen = Boolean(roomPhoto) && modules.length > 0;
 
   function openModal() {
-    setTab('collage');
+    setTab('ai');
     setOpen(true);
+    // Já dispara a geração com IA na hora de abrir — o botão "Visualizar em
+    // 3D" é pra ser um único clique até o resultado, sem passo intermediário.
+    if (!aiRender.imageDataUrl && !aiRender.loading) void generateAiRender();
   }
 
   function closeModal() {
@@ -47,9 +52,24 @@ export function AiVisualization() {
             ? 'Envie uma foto do ambiente na tela de medidas pra usar essa função'
             : undefined
         }
-        className="w-full rounded-lg border border-brand-navy-800 px-4 py-3 font-medium text-brand-navy-800 transition hover:bg-brand-navy-800 hover:text-white disabled:cursor-not-allowed disabled:border-brand-silver-400 disabled:text-brand-silver-400 disabled:hover:bg-transparent sm:w-auto"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-accent-700 px-4 py-3 font-medium text-white shadow-sm transition hover:bg-brand-accent-800 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:w-auto"
       >
-        Ver visualização
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M12 3v9m0 9v-9m0 0L4 7.5m8 4.5l8-4.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Visualizar em 3D
       </button>
 
       {open && (
@@ -62,7 +82,7 @@ export function AiVisualization() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-brand-navy-900">Visualização</h2>
+              <h2 className="text-lg font-semibold text-brand-navy-900">Visualização em 3D</h2>
               <button
                 type="button"
                 onClick={closeModal}
@@ -75,21 +95,21 @@ export function AiVisualization() {
             <div className="mb-4 flex gap-1 rounded-lg bg-brand-silver-100 p-1 text-sm">
               <button
                 type="button"
+                onClick={() => setTab('ai')}
+                className={`flex-1 rounded-md py-1.5 font-medium transition ${
+                  tab === 'ai' ? 'bg-white text-brand-accent-700 shadow-sm' : 'text-brand-silver-600'
+                }`}
+              >
+                Com IA (3D)
+              </button>
+              <button
+                type="button"
                 onClick={() => setTab('collage')}
                 className={`flex-1 rounded-md py-1.5 font-medium transition ${
                   tab === 'collage' ? 'bg-white text-brand-navy-900 shadow-sm' : 'text-brand-silver-600'
                 }`}
               >
                 Colagem
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab('ai')}
-                className={`flex-1 rounded-md py-1.5 font-medium transition ${
-                  tab === 'ai' ? 'bg-white text-brand-navy-900 shadow-sm' : 'text-brand-silver-600'
-                }`}
-              >
-                Com IA
               </button>
             </div>
 
@@ -102,9 +122,9 @@ export function AiVisualization() {
                     setTab('ai');
                     if (!aiRender.imageDataUrl && !aiRender.loading) void generateAiRender();
                   }}
-                  className="mt-3 w-full rounded-lg border border-brand-navy-800 px-4 py-2.5 text-sm font-medium text-brand-navy-800 transition hover:bg-brand-navy-800 hover:text-white"
+                  className="mt-3 w-full rounded-lg bg-brand-accent-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-accent-800"
                 >
-                  Refinar com IA →
+                  Ver em 3D com IA →
                 </button>
               </div>
             )}
@@ -114,14 +134,15 @@ export function AiVisualization() {
                 {!aiRender.loading && !aiRender.imageDataUrl && !aiRender.error && (
                   <div className="flex flex-col items-center gap-3 py-10 text-center">
                     <p className="text-sm text-brand-silver-600">
-                      Gera uma versão realista, com luz e sombra, recriada por IA a partir da sua foto.
+                      Gera uma versão realista, com luz e sombra, recriada por IA a partir da sua foto —
+                      já usando o acabamento, o puxador e os módulos exatos que você escolheu.
                     </p>
                     <button
                       type="button"
                       onClick={() => void generateAiRender()}
-                      className="rounded-lg bg-brand-navy-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-navy-900"
+                      className="rounded-lg bg-brand-accent-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-accent-800"
                     >
-                      Gerar com IA
+                      Gerar visualização em 3D
                     </button>
                   </div>
                 )}
