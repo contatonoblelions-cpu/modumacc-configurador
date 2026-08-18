@@ -11,7 +11,6 @@ import {
 } from '@dnd-kit/core';
 import { useConfiguratorStore } from './store/configuratorStore';
 import { WALL_DROPPABLE_ID } from './components/BuildCanvas';
-import { getModuleBand } from './utils/bands';
 import { AppBackground } from './components/AppBackground';
 import { Header } from './components/Header';
 import { RoomSizeForm } from './components/RoomSizeForm';
@@ -28,7 +27,6 @@ function App() {
   const step = useConfiguratorStore((s) => s.step);
   const room = useConfiguratorStore((s) => s.room);
   const catalog = useConfiguratorStore((s) => s.catalog);
-  const modules = useConfiguratorStore((s) => s.modules);
   const loadCatalog = useConfiguratorStore((s) => s.loadCatalog);
   const addModule = useConfiguratorStore((s) => s.addModule);
   const moveModule = useConfiguratorStore((s) => s.moveModule);
@@ -96,24 +94,23 @@ function App() {
   }, [step, catalog, addModule]);
 
   /**
-   * Calcula em que ponto (X em cm, mais a largura/altura) o módulo ficaria
-   * SE fosse solto agora — usado tanto pra desenhar o indicador "fantasma"
-   * em tempo real (`onDragMove`) quanto pra decidir a posição final
-   * (`onDragEnd`). O quadrante inteiro (`WALL_DROPPABLE_ID`, ver
-   * `BuildCanvas.tsx`) continua sendo um único alvo pro drop, mas a
-   * fileira (parede/chão) e o Y já não são mais livres — são sempre fixos
-   * pelo TIPO do módulo (ver `utils/bands.ts` > `getModuleBand`), só o X
-   * (em que ordem ele entra na fileira) é que continua vindo de onde a
-   * pessoa soltou.
+   * Calcula em que ponto (X, Y em cm) o módulo ficaria SE fosse solto agora
+   * — usado tanto pra desenhar o indicador "fantasma" em tempo real
+   * (`onDragMove`) quanto pra decidir a posição final (`onDragEnd`). Não há
+   * mais fileiras: o quadrante inteiro (`WALL_DROPPABLE_ID`, ver
+   * `BuildCanvas.tsx`) é um único alvo, e o módulo pode ir pra qualquer
+   * ponto dele.
    *
-   * A matemática do X: `active.rect.current.translated` é o retângulo do
-   * item sendo arrastado (o elemento ORIGINAL, não um `DragOverlay`) já
-   * somado ao deslocamento do dedo/mouse — o dnd-kit calcula isso sozinho.
-   * Pegamos o CENTRO desse retângulo, subtraímos a borda esquerda do
-   * quadrante (`over.rect`) pra virar um X relativo a ele, e convertemos de
-   * pixel pra cm usando a escala real do quadrante (`over.rect.width /
-   * room.widthCm`). Por fim subtraímos metade da largura do módulo, porque
-   * a store espera a borda ESQUERDA dele, não o centro.
+   * A matemática: `active.rect.current.translated` é o retângulo do item
+   * sendo arrastado (o elemento ORIGINAL, não um `DragOverlay`) já somado
+   * ao deslocamento do dedo/mouse — o dnd-kit calcula isso sozinho, não
+   * precisamos aplicar transform manualmente em nada. Pegamos o CENTRO
+   * desse retângulo, subtraímos a borda esquerda/superior do quadrante
+   * (`over.rect`) pra virar um X/Y relativo a ele, e convertemos de pixel
+   * pra cm usando a escala real do quadrante (`over.rect.width /
+   * room.widthCm` — largura e altura usam a MESMA escala, sem distorcer).
+   * Por fim subtraímos metade da largura/altura do módulo, porque queremos
+   * a borda ESQUERDA/SUPERIOR dele (o que a store espera), não o centro.
    */
   function computeDropTarget(
     event: DragMoveEvent | DragEndEvent,
@@ -132,18 +129,11 @@ function App() {
     const heightCm = data.heightCm;
     const scale = over.rect.width / room.widthCm;
     const centerX = translated.left + translated.width / 2;
+    const centerY = translated.top + translated.height / 2;
     const relativeX = centerX - over.rect.left;
+    const relativeY = centerY - over.rect.top;
     const x = relativeX / scale - widthCm / 2;
-
-    // Nome do módulo (pra descobrir a fileira, ver `getModuleBand`): vem do
-    // catálogo (novo módulo) ou da composição já montada (módulo existente
-    // sendo reordenado).
-    const name =
-      data.type === 'catalog-module'
-        ? catalog.find((m) => m.id === data.moduleId)?.name
-        : modules.find((m) => m.instanceId === data.instanceId)?.moduleName;
-    const band = name ? getModuleBand(name) : 'base';
-    const y = band === 'superior' ? 0 : Math.max(0, room.heightCm - heightCm);
+    const y = relativeY / scale - heightCm / 2;
 
     return { x, y, widthCm, heightCm };
   }
