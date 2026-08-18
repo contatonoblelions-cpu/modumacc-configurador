@@ -4,6 +4,7 @@ import type { PlacedModule, RoomDimensions } from '../types/composition';
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { buildRenderModules, generateRender } from '../api/generateRender';
 import { resolvePositionCm, packedPositionCm } from '../utils/placement';
+import { getModuleBand, getBandYRange } from '../utils/bands';
 
 type Step = 'room' | 'build' | 'review';
 
@@ -143,11 +144,18 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       widthCm: m.widthCm,
       heightCm: m.heightCm,
     }));
-    const packed = packedPositionCm(others, size, room);
-    // Sem ponto explícito -> primeiro canto livre (botão "+ Adicionar",
-    // deep-link). Com ponto explícito (soltar arrastando) -> resolve pro
-    // ponto livre mais próximo de onde o dedo soltou, sem sobrepor ninguém.
-    const resolved = position === undefined ? packed : resolvePositionCm(others, position, size, room, packed);
+    // Módulo de parede ("superior") só pode ficar na faixa de cima, módulo
+    // de chão só na faixa de baixo — nunca cruza a linha da bancada (ver
+    // `utils/bands.ts`). Dentro da própria faixa continua livre em X e Y.
+    const band = getModuleBand(mod.name);
+    const yBounds = getBandYRange(band, room, mod.heightCm);
+    const packed = packedPositionCm(others, size, room, yBounds);
+    // Sem ponto explícito -> primeiro canto livre da faixa (botão "+
+    // Adicionar", deep-link). Com ponto explícito (soltar arrastando) ->
+    // resolve pro ponto livre mais próximo de onde o dedo soltou, sem
+    // sobrepor ninguém e sem sair da faixa.
+    const resolved =
+      position === undefined ? packed : resolvePositionCm(others, position, size, room, packed, yBounds);
 
     const placed: PlacedModule = {
       instanceId: `inst-${++instanceCounter}`,
@@ -176,12 +184,15 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     const others = modules
       .filter((m) => m.instanceId !== instanceId)
       .map((m) => ({ x: m.offsetXCm, y: m.offsetYCm, widthCm: m.widthCm, heightCm: m.heightCm }));
+    const band = getModuleBand(item.moduleName);
+    const yBounds = getBandYRange(band, room, item.heightCm);
     const resolved = resolvePositionCm(
       others,
       { x: targetXCm, y: targetYCm },
       { widthCm: item.widthCm, heightCm: item.heightCm },
       room,
       { x: item.offsetXCm, y: item.offsetYCm },
+      yBounds,
     );
     set({
       modules: modules.map((m) =>
