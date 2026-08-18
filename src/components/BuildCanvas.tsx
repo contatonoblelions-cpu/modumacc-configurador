@@ -187,9 +187,32 @@ export function BuildCanvas() {
       */}
       <div
         ref={setNodeRef}
-        style={{ maxWidth: canvasWidth, height: canvasHeight }}
-        className="relative w-full overflow-hidden rounded-xl border border-brand-silver-200 bg-white md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
+        style={{
+          maxWidth: canvasWidth,
+          height: canvasHeight,
+          backgroundImage: 'linear-gradient(180deg, #fbf9f6 0%, #f4efe6 88%, #ece2cf 100%)',
+        }}
+        className="relative w-full overflow-hidden rounded-xl border border-brand-silver-200 md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
       >
+        {/*
+          "Piso" decorativo — faixa de madeira no rodapé do quadrante, só
+          pra dar contexto de parede+chão de cozinha de verdade (pedido do
+          cliente, referência tipo planta humanizada do Revit), em vez do
+          retângulo branco vazio de antes. 100% visual via CSS (sem imagem),
+          não mexe na posição livre dos módulos — o cliente escolheu manter
+          o arrasto livre em X/Y, só queria o CONTEXTO visual.
+        */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0"
+          style={{
+            height: '7%',
+            backgroundImage:
+              'repeating-linear-gradient(90deg, #c9a06d 0px, #c9a06d 26px, #bb9560 27px, #bb9560 28px), linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0))',
+            boxShadow: 'inset 0 3px 4px rgba(0,0,0,0.14)',
+          }}
+        />
+
         {modules.length === 0 && (
           <p className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-center text-[10px] text-brand-silver-400 md:text-xs">
             + arraste aqui, em qualquer lugar da parede
