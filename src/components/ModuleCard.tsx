@@ -5,6 +5,7 @@ import { formatBRL } from '../api/parseAttributes';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { ModuleSchematic } from './ModuleSchematic';
 import { getFinishSwatch } from '../utils/finishSwatches';
+import { getHandleColor } from '../utils/handleColors';
 
 interface Props {
   module: CatalogModule;
@@ -26,6 +27,8 @@ export function ModuleCard({ module }: Props) {
   const addModule = useConfiguratorStore((s) => s.addModule);
   const finish = useConfiguratorStore((s) => s.finish);
   const finishImageUrl = getFinishSwatch(finish);
+  const handle = useConfiguratorStore((s) => s.handle);
+  const handleColor = getHandleColor(handle);
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `catalog-${module.id}-${widthCm}`,
@@ -45,7 +48,12 @@ export function ModuleCard({ module }: Props) {
         className="touch-none cursor-grab active:cursor-grabbing"
         title="Arraste até a parede, na posição que quiser"
       >
-        <ModuleSchematic name={module.name} finishImageUrl={finishImageUrl} className="mb-2 h-24 w-full rounded-lg" />
+        <ModuleSchematic
+          name={module.name}
+          finishImageUrl={finishImageUrl}
+          handleColor={handleColor}
+          className="mb-2 h-24 w-full rounded-lg"
+        />
         <p className="text-sm font-medium text-brand-navy-800">{module.name}</p>
       </div>
 
