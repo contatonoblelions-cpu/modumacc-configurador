@@ -4,6 +4,7 @@ import type { CatalogModule } from '../types/catalog';
 import { formatBRL } from '../api/parseAttributes';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { ModuleSchematic } from './ModuleSchematic';
+import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
 
@@ -48,12 +49,16 @@ export function ModuleCard({ module }: Props) {
         className="touch-none cursor-grab active:cursor-grabbing"
         title="Arraste até a parede, na posição que quiser"
       >
-        <ModuleSchematic
-          name={module.name}
-          finishImageUrl={finishImageUrl}
-          handleColor={handleColor}
-          className="mb-2 h-24 w-full rounded-lg"
-        />
+        {hasModulePhoto(module.name) ? (
+          <ModulePhoto name={module.name} finish={finish} className="mb-2 h-24 w-full rounded-lg" />
+        ) : (
+          <ModuleSchematic
+            name={module.name}
+            finishImageUrl={finishImageUrl}
+            handleColor={handleColor}
+            className="mb-2 h-24 w-full rounded-lg"
+          />
+        )}
         <p className="text-sm font-medium text-brand-navy-800">{module.name}</p>
       </div>
 
