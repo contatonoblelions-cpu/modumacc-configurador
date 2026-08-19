@@ -28,6 +28,16 @@ export interface PlacedModule {
   offsetYCm: number;
   /** Preço base (sem considerar acabamento específico) usado antes de resolver a variação exata. */
   basePriceCents: number;
+  /**
+   * Rotação livre do módulo (graus, 0-359), só visual — gira a FOTO/desenho
+   * dentro da caixa, sem alterar o retângulo ocupado na parede (largura x
+   * altura continuam as mesmas pra colisão/posicionamento em
+   * `utils/placement.ts`). Dá liberdade de girar o módulo pra qualquer
+   * ângulo (ex.: virar a porta pro outro lado, alinhar um módulo de canto),
+   * sem precisar remontar o motor de posicionamento pra retângulos
+   * rotacionados. Padrão 0 (sem rotação) quando o módulo é adicionado.
+   */
+  rotationDeg: number;
   /** Preenchido depois de resolver contra acabamento/puxador globais da composição. */
   resolvedVariationId?: number;
   resolvedPriceCents?: number;
