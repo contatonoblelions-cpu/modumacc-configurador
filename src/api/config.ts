@@ -22,8 +22,8 @@ export const WOO_SITE_URL: string =
   'https://modumacc.com.br';
 
 /**
- * Base da Store API — passa pelo proxy same-origin `/api/wc/...` (ver
- * `api/wc/[...path].ts`), NÃO chama `modumacc.com.br` direto do navegador.
+ * Base da Store API — passa pelo proxy same-origin `/api/wc` (ver
+ * `api/wc.ts`), NÃO chama `modumacc.com.br` direto do navegador.
  * `modumacc.com.br` não devolve headers de CORS pra Store API pública, então
  * um `fetch()` direto do navegador (que é como isso funcionava antes) é
  * bloqueado pelo próprio navegador com "Failed to fetch" — sem sequer chegar
@@ -32,6 +32,24 @@ export const WOO_SITE_URL: string =
  * envolvido), e o navegador só fala com nosso próprio domínio.
  */
 export const STORE_API_BASE = '/api/wc';
+
+/**
+ * Monta a URL do proxy pra um sub-caminho da Store API (ex.: "products",
+ * "products/categories", "products/123?extra=1"). O sub-caminho vai como
+ * query string (`?path=...`), NÃO como segmento de URL — porque a rota
+ * dinâmica "catch-all" da Vercel (`api/wc/[...path].ts`, a versão antiga
+ * desse proxy) só casava com UM segmento de path e devolvia 404 da própria
+ * plataforma Vercel pra qualquer path com 2+ segmentos, confirmado testando
+ * ao vivo contra o deploy de produção. Usando query string, o sub-caminho
+ * sempre chega intacto em `req.query.path`, sem depender de como a Vercel
+ * resolve pastas com colchetes.
+ */
+export function wcUrl(pathAndQuery: string): string {
+  const [path, query] = pathAndQuery.split('?');
+  const params = new URLSearchParams(query);
+  params.set('path', path);
+  return `${STORE_API_BASE}?${params.toString()}`;
+}
 
 /**
  * ID da categoria "Cozinha", confirmado inspecionando
