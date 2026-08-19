@@ -19,31 +19,37 @@
  * chão no catálogo atual.
  */
 export const MODULE_PHOTOS: Record<string, string> = {
+  // Leva de 19/08 — base branca (não mais cinza), com o puxador "gola" real
+  // da Modumacc (friso de alumínio embutido, nunca saliente): horizontal na
+  // borda de BAIXO da porta nos módulos de parede (superior), e horizontal
+  // na borda de CIMA da porta/gaveta nos módulos de piso (base) — validado
+  // módulo a módulo com o cliente, incluindo proporção (largura x altura)
+  // batendo com as fotos reais do site.
   nicho:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260818_015844_7ce9a363-1b74-4e28-9384-1d2b5192ae76.png',
+    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260819_131318_eef8ba60-dcfc-4fb3-9e62-e4dcc6d2026f.png',
   microondas:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260818_015844_4852ecc3-366c-4c33-ae87-773f5c40ccaf.png',
+    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260819_130058_f935533e-471a-41f7-85d5-51dc8f9faa6a.png',
   basculante:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260818_015844_ae9f499f-e0a2-4c02-b05d-e3cf0c17dc45.png',
+    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260819_131318_935d2b92-a52c-4dbc-bd43-12c645456fcb.png',
   'porta-1-superior':
-    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260818_015844_fbf0fe6d-5756-464b-a020-1942ba67f25b.png',
+    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260819_140415_6146a02f-fe4a-406c-a70a-0f3d5ccc6ae4.png',
   'porta-2-superior':
-    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260818_015844_1915bbe9-61ee-4c39-adec-7b4edcdcd4a9.png',
+    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260819_131318_e83154e8-3d67-4522-a773-2d451628ad56.png',
   'porta-1-base':
-    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260818_015844_b8222324-1dc2-413b-849e-c9c5cd2b21ea.png',
+    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260819_131420_a1adccb0-c8ec-4d3b-8311-237e223b0069.png',
   'porta-2-base':
-    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260818_015844_ffba4498-7c24-4a78-aa07-94d163c4a1c0.png',
+    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260819_132633_5769f41c-d780-45ad-85f3-8785bc0a294a.png',
   'gaveta-2':
-    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260818_015844_7e46760f-5f67-4a9a-9fa0-d77176edf7cf.png',
+    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260819_133103_5772a0d6-a3ed-4932-b624-5e07b6273057.png',
   'gaveta-3':
-    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260818_015844_c11ac0f2-bac6-412b-a518-210740718322.png',
+    'https://d8j0ntlcm91z4.cloudfront.net/user_3E52ySviMYzw9Voe0FY1klAS1eM/hf_20260819_125242_21e0aa3c-9990-4420-bdb3-62f55d2fd1ba.png',
 };
 
 /** Calcula a chave de formato (pra bater com `MODULE_PHOTOS`) a partir do nome do produto. */
 export function getModuleShapeKey(name: string): string | null {
   const normalized = name
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase();
 
   if (normalized.includes('microondas')) return 'microondas';
@@ -72,4 +78,3 @@ export function getModulePhoto(name: string): string | null {
   const key = getModuleShapeKey(name);
   return key ? (MODULE_PHOTOS[key] ?? null) : null;
 }
-
