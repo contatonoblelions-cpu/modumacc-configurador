@@ -24,6 +24,8 @@ interface PlacedModuleBoxProps {
   finish: string | null;
   finishImageUrl: string | null;
   handleColor: { fill: string; stroke: string } | null;
+  selected: boolean;
+  onSelect: (instanceId: string) => void;
   onRemove: (instanceId: string) => void;
   onRotate: (instanceId: string, deltaDeg: number) => void;
 }
@@ -51,8 +53,26 @@ const ROTATE_STEP_DEG = 45;
  * INTERNO (`.relative.h-full...overflow-hidden` logo abaixo), deixando o
  * contêiner externo (que tem o `ref` do drag) com overflow visível só pra
  * essas duas tirinhas decorativas conseguirem "vazar" por cima/pela direita.
+ *
+ * Seleção com barra de ações flutuante (pedido do cliente, referência de um
+ * editor 3D com ícones circulares ao redor do objeto selecionado): em vez de
+ * botõezinhos fixos sempre no canto do módulo, um TOQUE no módulo o
+ * seleciona (`onSelect`) e abre uma barrinha flutuante logo ACIMA dele com
+ * as ações (girar, remover) — mais parecido com editor de verdade, e não
+ * polui a parede quando nada está selecionado. Tocar em outro lugar do
+ * quadrante (`BuildCanvas` > clique no fundo) fecha a barra.
  */
-function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemove, onRotate }: PlacedModuleBoxProps) {
+function PlacedModuleBox({
+  m,
+  scale,
+  finish,
+  finishImageUrl,
+  handleColor,
+  selected,
+  onSelect,
+  onRemove,
+  onRotate,
+}: PlacedModuleBoxProps) {
   const hasPhoto = hasModulePhoto(m.moduleName);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `placed-${m.instanceId}`,
@@ -68,13 +88,25 @@ function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemo
   return (
     <div
       ref={setNodeRef}
+      onClick={(e) => {
+        // Não deixa o clique "vazar" pro fundo do quadrante (que desmarca a
+        // seleção) — ver `onClick` do droppable em `BuildCanvas`.
+        e.stopPropagation();
+        onSelect(m.instanceId);
+      }}
       style={{
         left: m.offsetXCm * scale,
         top: m.offsetYCm * scale,
         width: m.widthCm * scale,
         height: m.heightCm * scale,
       }}
-      className={`group absolute ring-1 ring-black/10 transition ${isDragging ? 'z-20 opacity-30 ring-2 ring-brand-navy-400' : ''}`}
+      className={`group absolute ring-1 transition ${
+        isDragging
+          ? 'z-20 opacity-30 ring-2 ring-brand-navy-400'
+          : selected
+            ? 'z-10 ring-2 ring-brand-navy-500'
+            : 'ring-black/10'
+      }`}
     >
       <IsoBevel />
       <div className="relative h-full w-full overflow-hidden">
@@ -110,30 +142,38 @@ function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemo
         </div>
       </div>
       {/*
-        Botão de girar — cada toque gira mais `ROTATE_STEP_DEG` graus (dá a
-        volta completa em 8 toques), pedido do cliente pra ter liberdade de
-        ajustar o ângulo do módulo (ex.: virar a porta pro outro lado, alinhar
-        um módulo de canto) sem precisar de um gesto de arrastar separado, que
-        conflitaria com o arrasto de reposicionar (já usa `listeners` do
-        dnd-kit no wrapper interno). Só gira a foto/desenho por dentro — o
+        Barra de ações flutuante — só aparece com o módulo SELECIONADO (um
+        toque nele, ver `onClick` acima), flutuando logo ACIMA da caixa,
+        centralizada. "Girar" soma `ROTATE_STEP_DEG` graus a cada toque (dá a
+        volta completa em 8 toques) — só gira a foto/desenho por dentro, o
         retângulo ocupado na parede (pra colisão/posicionamento) não muda.
+        `onPointerDown` com stopPropagation pra não brigar com o arrasto do
+        dnd-kit (que fica no wrapper interno) nem re-disparar o clique de
+        seleção do container.
       */}
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => onRotate(m.instanceId, ROTATE_STEP_DEG)}
-        className="absolute left-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white/95 text-[9px] text-brand-navy-700 opacity-100 shadow transition-opacity md:left-1 md:top-1 md:h-6 md:w-6 md:text-sm md:opacity-0 md:group-hover:opacity-100"
-        title="Girar módulo"
-      >
-        ↻
-      </button>
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => onRemove(m.instanceId)}
-        className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white/95 text-[9px] text-red-600 opacity-100 shadow transition-opacity md:right-1 md:top-1 md:h-6 md:w-6 md:text-sm md:opacity-0 md:group-hover:opacity-100"
-        title="Remover"
-      >
-        ✕
-      </button>
+      {selected && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute left-1/2 top-0 z-30 flex -translate-x-1/2 -translate-y-[calc(100%+8px)] items-center gap-1 rounded-full bg-white p-1 shadow-lg ring-1 ring-black/10"
+        >
+          <button
+            onClick={() => onRotate(m.instanceId, ROTATE_STEP_DEG)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-base text-brand-navy-700 transition hover:bg-brand-navy-50"
+            title="Girar módulo"
+          >
+            ↻
+          </button>
+          <span className="h-5 w-px bg-brand-silver-200" aria-hidden="true" />
+          <button
+            onClick={() => onRemove(m.instanceId)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-base text-red-600 transition hover:bg-red-50"
+            title="Remover"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -163,6 +203,8 @@ export function BuildCanvas() {
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(CANVAS_MAX_PX);
+  /** Qual módulo está selecionado (mostrando a barra de ações flutuante) — ver `PlacedModuleBox`. Só um por vez. */
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -224,6 +266,10 @@ export function BuildCanvas() {
       */}
       <div
         ref={setNodeRef}
+        // Clique no FUNDO do quadrante (não em cima de um módulo — cada
+        // módulo dá `stopPropagation` no próprio clique) fecha a barra de
+        // ações flutuante, igual clicar fora de um menu.
+        onClick={() => setSelectedInstanceId(null)}
         style={{
           maxWidth: canvasWidth,
           height: canvasHeight,
@@ -336,7 +382,12 @@ export function BuildCanvas() {
             finish={finish}
             finishImageUrl={finishImageUrl}
             handleColor={handleColor}
-            onRemove={removeModule}
+            selected={selectedInstanceId === m.instanceId}
+            onSelect={setSelectedInstanceId}
+            onRemove={(instanceId) => {
+              setSelectedInstanceId(null);
+              removeModule(instanceId);
+            }}
             onRotate={rotateModule}
           />
         ))}
