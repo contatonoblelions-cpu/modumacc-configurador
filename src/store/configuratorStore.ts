@@ -78,6 +78,12 @@ interface ConfiguratorState {
   removeModule: (instanceId: string) => void;
   /** Reposiciona um módulo já colocado pra um ponto (X, Y) livre específico do quadrante (arrastar-e-soltar). */
   moveModule: (instanceId: string, targetXCm: number, targetYCm: number) => void;
+  /**
+   * Gira o módulo `deltaDeg` graus (positivo = horário) a partir da rotação
+   * atual, dando a volta completa (0-359, com wraparound nos dois
+   * sentidos) — só efeito visual, não muda o espaço ocupado na parede.
+   */
+  rotateModule: (instanceId: string, deltaDeg: number) => void;
   /** Atualiza o indicador de posição em tempo real durante o arrasto (ver `DragPreview`). */
   setDragPreview: (preview: DragPreview | null) => void;
   setFinish: (finish: string) => void;
@@ -167,6 +173,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       basePriceCents: mod.minPriceCents,
       offsetXCm: resolved.x,
       offsetYCm: resolved.y,
+      rotationDeg: 0,
     };
     set({ modules: [...get().modules, placed] });
     void get().resolveComposition();
@@ -200,6 +207,15 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       ),
     });
   },
+
+  rotateModule: (instanceId, deltaDeg) =>
+    set({
+      modules: get().modules.map((m) =>
+        m.instanceId === instanceId
+          ? { ...m, rotationDeg: (((m.rotationDeg + deltaDeg) % 360) + 360) % 360 }
+          : m,
+      ),
+    }),
 
   setDragPreview: (preview) => set({ dragPreview: preview }),
 
