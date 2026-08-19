@@ -25,7 +25,11 @@ interface PlacedModuleBoxProps {
   finishImageUrl: string | null;
   handleColor: { fill: string; stroke: string } | null;
   onRemove: (instanceId: string) => void;
+  onRotate: (instanceId: string, deltaDeg: number) => void;
 }
+
+/** Passo de cada toque no botão de girar — 8 posições ao redor do círculo (0°, 45°, 90°...) dão liberdade de ângulo sem precisar de um gesto de arrastar separado (que conflitaria com o arrasto de reposicionar já existente). */
+const ROTATE_STEP_DEG = 45;
 
 /**
  * Um módulo já colocado na parede — posição TOTALMENTE livre em X e Y
@@ -48,7 +52,7 @@ interface PlacedModuleBoxProps {
  * contêiner externo (que tem o `ref` do drag) com overflow visível só pra
  * essas duas tirinhas decorativas conseguirem "vazar" por cima/pela direita.
  */
-function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemove }: PlacedModuleBoxProps) {
+function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemove, onRotate }: PlacedModuleBoxProps) {
   const hasPhoto = hasModulePhoto(m.moduleName);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `placed-${m.instanceId}`,
@@ -77,7 +81,8 @@ function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemo
         <div
           {...listeners}
           {...attributes}
-          className="relative h-full w-full touch-none cursor-grab active:cursor-grabbing"
+          style={{ transform: `rotate(${m.rotationDeg}deg)` }}
+          className="relative h-full w-full touch-none cursor-grab transition-transform active:cursor-grabbing"
         >
           {hasPhoto ? (
             <ModulePhoto name={m.moduleName} finish={finish} className="absolute inset-0 h-full w-full" />
@@ -104,6 +109,23 @@ function PlacedModuleBox({ m, scale, finish, finishImageUrl, handleColor, onRemo
           </div>
         </div>
       </div>
+      {/*
+        Botão de girar — cada toque gira mais `ROTATE_STEP_DEG` graus (dá a
+        volta completa em 8 toques), pedido do cliente pra ter liberdade de
+        ajustar o ângulo do módulo (ex.: virar a porta pro outro lado, alinhar
+        um módulo de canto) sem precisar de um gesto de arrastar separado, que
+        conflitaria com o arrasto de reposicionar (já usa `listeners` do
+        dnd-kit no wrapper interno). Só gira a foto/desenho por dentro — o
+        retângulo ocupado na parede (pra colisão/posicionamento) não muda.
+      */}
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => onRotate(m.instanceId, ROTATE_STEP_DEG)}
+        className="absolute left-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white/95 text-[9px] text-brand-navy-700 opacity-100 shadow transition-opacity md:left-1 md:top-1 md:h-6 md:w-6 md:text-sm md:opacity-0 md:group-hover:opacity-100"
+        title="Girar módulo"
+      >
+        ↻
+      </button>
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => onRemove(m.instanceId)}
@@ -130,6 +152,7 @@ export function BuildCanvas() {
   const room = useConfiguratorStore((s) => s.room);
   const modules = useConfiguratorStore((s) => s.modules);
   const removeModule = useConfiguratorStore((s) => s.removeModule);
+  const rotateModule = useConfiguratorStore((s) => s.rotateModule);
   const dragPreview = useConfiguratorStore((s) => s.dragPreview);
   const finish = useConfiguratorStore((s) => s.finish);
   const finishImageUrl = getFinishSwatch(finish);
@@ -314,6 +337,7 @@ export function BuildCanvas() {
             finishImageUrl={finishImageUrl}
             handleColor={handleColor}
             onRemove={removeModule}
+            onRotate={rotateModule}
           />
         ))}
 
