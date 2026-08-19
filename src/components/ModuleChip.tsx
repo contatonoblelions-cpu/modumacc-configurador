@@ -2,7 +2,6 @@ import { useDraggable } from '@dnd-kit/core';
 import type { CatalogModule } from '../types/catalog';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
-import { IsoBevel } from './IsoBevel';
 
 interface Props {
   module: CatalogModule;
@@ -48,10 +47,7 @@ export function ModuleChip({ module }: Props) {
   });
 
   return (
-    // Wrapper só pra IsoBevel (chanfro 3D) vazar por cima/direita — o botão
-    // em si continua com `overflow-hidden` (precisa, pra recortar a foto).
     <div className="relative shrink-0 md:hidden">
-      <IsoBevel depth={5} />
       <button
         type="button"
         ref={setNodeRef}

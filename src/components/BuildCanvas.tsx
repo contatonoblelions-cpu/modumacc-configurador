@@ -4,7 +4,6 @@ import { useConfiguratorStore } from '../store/configuratorStore';
 import { formatBRL } from '../api/parseAttributes';
 import { ModuleSchematic } from './ModuleSchematic';
 import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
-import { IsoBevel } from './IsoBevel';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
 import type { PlacedModule } from '../types/composition';
@@ -108,7 +107,6 @@ function PlacedModuleBox({
             : 'ring-black/10'
       }`}
     >
-      <IsoBevel />
       <div className="relative h-full w-full overflow-hidden">
         <div
           {...listeners}

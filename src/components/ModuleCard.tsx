@@ -5,7 +5,6 @@ import { formatBRL } from '../api/parseAttributes';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { ModuleSchematic } from './ModuleSchematic';
 import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
-import { IsoBevel } from './IsoBevel';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
 
@@ -50,9 +49,8 @@ export function ModuleCard({ module }: Props) {
         className="touch-none cursor-grab active:cursor-grabbing"
         title="Arraste até a parede, na posição que quiser"
       >
-        {/* Wrapper com overflow visível só pra IsoBevel (chanfro 3D) conseguir vazar por cima/direita — o corte da foto continua acontecendo dentro do próprio ModulePhoto/ModuleSchematic (`rounded-lg` + overflow-hidden interno deles). */}
+        {/* Miniatura plana da imagem do módulo (só a frente, sem profundidade 3D). */}
         <div className="relative mb-2 h-24 w-full">
-          <IsoBevel depth={5} />
           {hasModulePhoto(module.name) ? (
             <ModulePhoto name={module.name} finish={finish} className="h-full w-full rounded-lg" />
           ) : (
