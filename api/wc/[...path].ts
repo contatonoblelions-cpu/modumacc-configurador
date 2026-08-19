@@ -47,7 +47,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }`;
 
   try {
-    const upstream = await fetch(targetUrl, { headers: { Accept: 'application/json' } });
+    // Alguns WAFs (ex.: bloqueio por padrão de User-Agent "genérico" de
+    // servidor) tratam requisições sem cara de navegador como suspeitas e
+    // devolvem um 404 genérico do WordPress em vez do bloqueio de verdade —
+    // por isso mandamos um User-Agent realista aqui, imitando um navegador.
+    const upstream = await fetch(targetUrl, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+      },
+    });
     const body = await upstream.text();
     res.status(upstream.status);
     res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/json');
