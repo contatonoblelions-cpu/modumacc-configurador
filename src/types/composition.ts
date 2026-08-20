@@ -3,6 +3,22 @@
 export interface RoomDimensions {
   widthCm: number;
   heightCm: number;
+  /** Largura da pia (cm), opcional -- informada na tela de medidas. Sem isso, nenhuma pia aparece na bancada. */
+  sinkWidthCm?: number;
+}
+
+/**
+ * Pia com torneira, desenhada sobre a linha da bancada (ver
+ * `COUNTERTOP_RATIO` em `utils/bands.ts`) -- a pessoa pode arrastar
+ * SOMENTE na horizontal pra qualquer ponto dentro da largura do espaço,
+ * pra escolher onde a pia fica ao longo do balcão. Não interage com os
+ * módulos (não colide, não bloqueia arrasto de módulo por baixo) -- é só
+ * um desenho posicionado por cima, ver `SinkFixture.tsx`.
+ */
+export interface SinkFixture {
+  widthCm: number;
+  /** Posição X (cm a partir da borda esquerda do espaço) da borda esquerda da pia. */
+  offsetXCm: number;
 }
 
 /**

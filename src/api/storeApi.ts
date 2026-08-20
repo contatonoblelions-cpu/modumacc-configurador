@@ -1,4 +1,11 @@
-import { KITCHEN_CATEGORY_ID, ATTR_NAMES, NO_HANDLE_VALUE, wcUrl } from './config';
+import {
+  KITCHEN_CATEGORY_ID,
+  ATTR_NAMES,
+  NO_HANDLE_VALUE,
+  HIDDEN_PRODUCT_IDS,
+  HIDDEN_WIDTHS_BY_PRODUCT,
+  wcUrl,
+} from './config';
 import { parseDimensions, parsePriceCents } from './parseAttributes';
 import type { WooProduct, WooCategory } from '../types/wooStoreApi';
 import type { CatalogModule, ModuleVariation } from '../types/catalog';
@@ -69,6 +76,12 @@ function mapProductToModule(p: WooProduct): CatalogModule {
     };
   });
 
+  // Esconde larguras problematicas de um produto especifico (ver
+  // `HIDDEN_WIDTHS_BY_PRODUCT` em `config.ts`) -- o restante do produto
+  // continua normal, so essa(s) largura(s) somem do catalogo.
+  const hiddenWidths = HIDDEN_WIDTHS_BY_PRODUCT[p.id] ?? [];
+  const visibleWidths = [...widths].filter((w) => !hiddenWidths.includes(w)).sort((a, b) => a - b);
+
   return {
     id: p.id,
     name: p.name,
@@ -79,7 +92,7 @@ function mapProductToModule(p: WooProduct): CatalogModule {
     images: p.images.map((img) => ({ id: img.id, src: img.src, thumbnail: img.thumbnail, alt: img.alt || p.name })),
     minPriceCents: parsePriceCents(p.prices.price_range?.min_amount ?? p.prices.price),
     maxPriceCents: parsePriceCents(p.prices.price_range?.max_amount ?? p.prices.price),
-    availableWidths: [...widths].sort((a, b) => a - b),
+    availableWidths: visibleWidths,
     hasHandle,
     availableFinishes,
     availableHandles,
@@ -104,7 +117,12 @@ export async function fetchKitchenModules(): Promise<CatalogModule[]> {
   );
   return products
     .filter((p) => p.type === 'variable' || p.type === 'simple')
-    .map(mapProductToModule);
+    .filter((p) => !HIDDEN_PRODUCT_IDS.includes(p.id))
+    .map(mapProductToModule)
+    // Se todas as larguras de um produto foram escondidas (ver
+    // `HIDDEN_WIDTHS_BY_PRODUCT`), o produto some do catalogo tambem --
+    // nao faz sentido mostrar um modulo sem nenhuma largura escolhivel.
+    .filter((m) => m.availableWidths.length > 0);
 }
 
 const variationCache = new Map<number, ModuleVariation>();

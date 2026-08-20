@@ -12,6 +12,7 @@ import {
 import { useConfiguratorStore } from './store/configuratorStore';
 import { WALL_DROPPABLE_ID } from './components/BuildCanvas';
 import { getModuleBand, getBandYRange } from './utils/bands';
+import { snapPositionCm } from './utils/placement';
 import { AppBackground } from './components/AppBackground';
 import { Header } from './components/Header';
 import { RoomSizeForm } from './components/RoomSizeForm';
@@ -22,7 +23,8 @@ import { SummaryBar } from './components/SummaryBar';
 
 type DragData =
   | { type: 'catalog-module'; moduleId: number; moduleName: string; widthCm: number; heightCm: number }
-  | { type: 'placed-module'; instanceId: string; moduleName: string; widthCm: number; heightCm: number };
+  | { type: 'placed-module'; instanceId: string; moduleName: string; widthCm: number; heightCm: number }
+  | { type: 'sink' };
 
 function App() {
   const step = useConfiguratorStore((s) => s.step);
@@ -31,6 +33,8 @@ function App() {
   const loadCatalog = useConfiguratorStore((s) => s.loadCatalog);
   const addModule = useConfiguratorStore((s) => s.addModule);
   const moveModule = useConfiguratorStore((s) => s.moveModule);
+  const modules = useConfiguratorStore((s) => s.modules);
+  const moveSink = useConfiguratorStore((s) => s.moveSink);
   const setDragPreview = useConfiguratorStore((s) => s.setDragPreview);
   const autoAddedRef = useRef(false);
 
@@ -121,7 +125,7 @@ function App() {
     if (over.id !== WALL_DROPPABLE_ID) return null;
 
     const data = active.data.current as DragData | undefined;
-    if (!data) return null;
+    if (!data || data.type === 'sink') return null;
 
     const translated = active.rect.current.translated;
     if (!translated || !over.rect.width) return null;
@@ -133,7 +137,7 @@ function App() {
     const centerY = translated.top + translated.height / 2;
     const relativeX = centerX - over.rect.left;
     const relativeY = centerY - over.rect.top;
-    const x = relativeX / scale - widthCm / 2;
+    const rawX = relativeX / scale - widthCm / 2;
     const rawY = relativeY / scale - heightCm / 2;
 
     // Módulo de parede não pode passar da bancada pra baixo, módulo de chão
@@ -144,22 +148,60 @@ function App() {
     const { minY, maxY } = getBandYRange(band, room, heightCm);
     const y = Math.min(maxY, Math.max(minY, rawY));
 
-    return { x, y, widthCm, heightCm };
+    // Aplica o mesmo imã de alinhamento (ver `snapPositionCm`) no indicador
+    // fantasma, contra os módulos já colocados (exceto o próprio, se for um
+    // reposicionamento) -- assim o "fantasma" já mostra grudado na borda
+    // antes mesmo de soltar, sem surpresa depois do drop.
+    const others = modules
+      .filter((m) => !(data.type === 'placed-module' && m.instanceId === data.instanceId))
+      .map((m) => ({ x: m.offsetXCm, y: m.offsetYCm, widthCm: m.widthCm, heightCm: m.heightCm }));
+    const snapped = snapPositionCm(others, { x: rawX, y }, { widthCm, heightCm }, room, { minY, maxY });
+
+    return { x: snapped.x, y: snapped.y, widthCm, heightCm };
+  }
+
+  /** Calcula a posição X (cm) da pia se fosse solta agora -- só horizontal, sempre na linha da bancada (ver `computeDropTarget` pra lógica geral equivalente dos módulos). */
+  function computeSinkX(event: DragMoveEvent | DragEndEvent): number | null {
+    const { active, over } = event;
+    if (!over || !room) return null;
+    if (over.id !== WALL_DROPPABLE_ID) return null;
+    const data = active.data.current as DragData | undefined;
+    if (!data || data.type !== 'sink') return null;
+
+    const translated = active.rect.current.translated;
+    if (!translated || !over.rect.width) return null;
+
+    const scale = over.rect.width / room.widthCm;
+    const centerX = translated.left + translated.width / 2;
+    const relativeX = centerX - over.rect.left;
+    return relativeX / scale;
   }
 
   /** Atualiza o indicador "fantasma" a cada movimento — dá o feedback em tempo real de onde o módulo vai encaixar. */
   function handleDragMove(event: DragMoveEvent) {
+    const data = event.active.data.current as DragData | undefined;
+    if (data?.type === 'sink') {
+      const sinkX = computeSinkX(event);
+      if (sinkX !== null) moveSink(sinkX);
+      return;
+    }
     const target = computeDropTarget(event);
     setDragPreview(target);
   }
 
   function handleDragEnd(event: DragEndEvent) {
     setDragPreview(null);
-    const target = computeDropTarget(event);
-    if (!target) return;
-
     const data = event.active.data.current as DragData | undefined;
     if (!data) return;
+
+    if (data.type === 'sink') {
+      const sinkX = computeSinkX(event);
+      if (sinkX !== null) moveSink(sinkX);
+      return;
+    }
+
+    const target = computeDropTarget(event);
+    if (!target) return;
 
     if (data.type === 'catalog-module') {
       const mod = catalog.find((m) => m.id === data.moduleId);

@@ -15,6 +15,7 @@ export function RoomSizeForm() {
   const roomPhoto = useConfiguratorStore((s) => s.roomPhoto);
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
+  const [sinkWidth, setSinkWidth] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [processingPhoto, setProcessingPhoto] = useState(false);
@@ -42,8 +43,22 @@ export function RoomSizeForm() {
       setError('Informe largura e altura válidas, em centímetros.');
       return;
     }
+    // Medida da pia é opcional -- só valida se a pessoa preencheu algo.
+    let sinkWidthCm: number | undefined;
+    if (sinkWidth.trim() !== '') {
+      const parsedSink = parseFloat(sinkWidth.replace(',', '.'));
+      if (!parsedSink || parsedSink <= 0) {
+        setError('Informe uma largura de pia válida, em centímetros.');
+        return;
+      }
+      if (parsedSink > widthCm) {
+        setError('A largura da pia não pode ser maior que a largura do espaço.');
+        return;
+      }
+      sinkWidthCm = parsedSink;
+    }
     setError(null);
-    setRoom({ widthCm, heightCm });
+    setRoom({ widthCm, heightCm, sinkWidthCm });
   }
 
   return (
@@ -80,6 +95,23 @@ export function RoomSizeForm() {
             value={height}
             onChange={(e) => setHeight(e.target.value)}
             placeholder="Ex: 240"
+            className="w-full rounded-lg border border-brand-silver-400 px-3 py-2 focus:border-brand-navy-700 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-brand-navy-800">
+            Largura da pia (cm) — opcional
+          </label>
+          <p className="mb-2 text-xs text-brand-silver-600">
+            Se informar, a pia com torneira aparece sobre a bancada e você pode arrastá-la pra qualquer ponto do balcão.
+          </p>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={sinkWidth}
+            onChange={(e) => setSinkWidth(e.target.value)}
+            placeholder="Ex: 80"
             className="w-full rounded-lg border border-brand-silver-400 px-3 py-2 focus:border-brand-navy-700 focus:outline-none"
           />
         </div>

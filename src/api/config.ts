@@ -68,3 +68,26 @@ export const ATTR_NAMES = {
 } as const;
 
 export const NO_HANDLE_VALUE = 'Não se aplica';
+
+/**
+ * Produtos escondidos do configurador (o produto continua existindo no
+ * WooCommerce/modumacc.com.br -- nunca mexemos no site, so filtramos aqui no
+ * app, ver README). Motivos confirmados com o cliente em 2026-08-20:
+ * - 1147 "Modulo 2 Portas Superior": a foto nao mostra a divisao no meio
+ *   (fica parecendo uma porta unica, mas e vendido como 2 portas).
+ * - 921 "Modulo 2 Gavetas": ficou duplicado na pratica com outro modulo de
+ *   gavetas (mesmas larguras 40/50/60), pedido remover a repeticao.
+ * - 868 "Modulo 1 Porta Inferior": proporcao errada no desenho/foto.
+ */
+export const HIDDEN_PRODUCT_IDS: number[] = [1147, 921, 868];
+
+/**
+ * Larguras escondidas de um produto especifico que continua existindo com
+ * as outras larguras. Motivo confirmado com o cliente em 2026-08-20:
+ * - 1282 "Modulo Nichos Superior": esconder so a largura de 15cm
+ *   (proporcao errada nessa largura especifica); a de 20cm continua normal.
+ */
+export const HIDDEN_WIDTHS_BY_PRODUCT: Record<number, number[]> = {
+  1282: [15],
+};
+

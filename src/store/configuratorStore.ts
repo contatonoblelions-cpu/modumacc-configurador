@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import type { CatalogModule } from '../types/catalog';
-import type { PlacedModule, RoomDimensions } from '../types/composition';
+import type { PlacedModule, RoomDimensions, SinkFixture } from '../types/composition';
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { buildRenderModules, generateRender } from '../api/generateRender';
-import { resolvePositionCm, packedPositionCm } from '../utils/placement';
+import { resolvePositionCm, packedPositionCm, snapPositionCm } from '../utils/placement';
 import { getModuleBand, getBandYRange } from '../utils/bands';
 
 type Step = 'room' | 'build' | 'review';
@@ -51,6 +51,8 @@ interface ConfiguratorState {
   aiRender: AiRenderState;
   /** Ver `DragPreview` — null quando não há arrasto em andamento. */
   dragPreview: DragPreview | null;
+  /** Pia com torneira posicionada sobre a bancada -- null quando o espaço não tem largura de pia informada (ver `RoomDimensions.sinkWidthCm`). */
+  sink: SinkFixture | null;
 
   loadCatalog: () => Promise<void>;
   setRoom: (room: RoomDimensions) => void;
@@ -86,6 +88,8 @@ interface ConfiguratorState {
   rotateModule: (instanceId: string, deltaDeg: number) => void;
   /** Atualiza o indicador de posição em tempo real durante o arrasto (ver `DragPreview`). */
   setDragPreview: (preview: DragPreview | null) => void;
+  /** Move a pia pra uma posição X (cm) livre horizontalmente dentro do espaço -- fica sempre encostada na linha da bancada, só desliza pros lados. */
+  moveSink: (targetXCm: number) => void;
   setFinish: (finish: string) => void;
   setHandle: (handle: string) => void;
   /** Resolve preço + URL de add-to-cart de cada módulo colocado contra acabamento/puxador atuais. */
@@ -109,6 +113,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   resolving: false,
   aiRender: { loading: false, imageDataUrl: null, error: null },
   dragPreview: null,
+  sink: null,
 
   loadCatalog: async () => {
     set({ catalogLoading: true, catalogError: null });
@@ -130,7 +135,15 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     }
   },
 
-  setRoom: (room) => set({ room, step: 'build' }),
+  setRoom: (room) => {
+    // Pia entra centralizada na bancada por padrão (a pessoa pode arrastar
+    // pra qualquer lado depois, ver `moveSink`).
+    const sink: SinkFixture | null =
+      room.sinkWidthCm && room.sinkWidthCm > 0
+        ? { widthCm: room.sinkWidthCm, offsetXCm: Math.max(0, (room.widthCm - room.sinkWidthCm) / 2) }
+        : null;
+    set({ room, step: 'build', sink });
+  },
 
   setRoomPhoto: (photo) => set({ roomPhoto: photo }),
 
@@ -160,8 +173,12 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     // Adicionar", deep-link). Com ponto explícito (soltar arrastando) ->
     // resolve pro ponto livre mais próximo de onde o dedo soltou, sem
     // sobrepor ninguém e sem sair da faixa.
-    const resolved =
+    const resolvedRaw =
       position === undefined ? packed : resolvePositionCm(others, position, size, room, packed, yBounds);
+    // Imã de alinhamento: gruda nas bordas de módulos vizinhos (ou da
+    // parede) dentro de `SNAP_CM`, eliminando vãozinhos mesmo quando o
+    // ponto solto já estava "quase" alinhado.
+    const resolved = snapPositionCm(others, resolvedRaw, size, room, yBounds);
 
     const placed: PlacedModule = {
       instanceId: `inst-${++instanceCounter}`,
@@ -193,7 +210,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       .map((m) => ({ x: m.offsetXCm, y: m.offsetYCm, widthCm: m.widthCm, heightCm: m.heightCm }));
     const band = getModuleBand(item.moduleName);
     const yBounds = getBandYRange(band, room, item.heightCm);
-    const resolved = resolvePositionCm(
+    const resolvedRaw = resolvePositionCm(
       others,
       { x: targetXCm, y: targetYCm },
       { widthCm: item.widthCm, heightCm: item.heightCm },
@@ -201,11 +218,26 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       { x: item.offsetXCm, y: item.offsetYCm },
       yBounds,
     );
+    const resolved = snapPositionCm(
+      others,
+      resolvedRaw,
+      { widthCm: item.widthCm, heightCm: item.heightCm },
+      room,
+      yBounds,
+    );
     set({
       modules: modules.map((m) =>
         m.instanceId === instanceId ? { ...m, offsetXCm: resolved.x, offsetYCm: resolved.y } : m,
       ),
     });
+  },
+
+  moveSink: (targetXCm) => {
+    const { sink, room } = get();
+    if (!sink || !room) return;
+    const maxX = Math.max(0, room.widthCm - sink.widthCm);
+    const offsetXCm = Math.min(maxX, Math.max(0, targetXCm));
+    set({ sink: { ...sink, offsetXCm } });
   },
 
   rotateModule: (instanceId, deltaDeg) =>

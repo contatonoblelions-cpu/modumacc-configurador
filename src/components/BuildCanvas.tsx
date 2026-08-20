@@ -4,10 +4,41 @@ import { useConfiguratorStore } from '../store/configuratorStore';
 import { formatBRL } from '../api/parseAttributes';
 import { ModuleSchematic } from './ModuleSchematic';
 import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
+import { SinkFixture } from './SinkFixture';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
-import type { PlacedModule } from '../types/composition';
+import type { PlacedModule, SinkFixture as SinkFixtureData } from '../types/composition';
 import { COUNTERTOP_RATIO } from '../utils/bands';
+
+/**
+ * Pia arrastável -- só na horizontal (encostada na linha da bancada,
+ * `top` fixo), a pessoa arrasta pra qualquer ponto ao longo do balcão (ver
+ * `moveSink`/`computeSinkX` em `App.tsx`/`configuratorStore.ts`). Não
+ * colide com módulos, é só um desenho por cima (ver `SinkFixture.tsx`).
+ */
+function DraggableSink({ sink, scale, canvasHeight }: { sink: SinkFixtureData; scale: number; canvasHeight: number }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: 'sink',
+    data: { type: 'sink' },
+  });
+  const sizePx = sink.widthCm * scale;
+  const topPx = canvasHeight * COUNTERTOP_RATIO - sizePx * 0.42;
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={{ left: sink.offsetXCm * scale, top: topPx, width: sizePx, height: sizePx * 0.6 }}
+      className={`absolute z-20 touch-none cursor-grab transition active:cursor-grabbing ${
+        isDragging ? 'opacity-60' : ''
+      }`}
+      title="Arraste para posicionar a pia"
+    >
+      <SinkFixture className="h-full w-full drop-shadow-md" />
+    </div>
+  );
+}
 
 const CANVAS_MAX_PX = 760;
 /** Altura mínima/máxima do quadrante em px, só pra não ficar minúsculo ou gigante em ambientes muito baixos/altos. */
@@ -189,6 +220,7 @@ function PlacedModuleBox({
 export function BuildCanvas() {
   const room = useConfiguratorStore((s) => s.room);
   const modules = useConfiguratorStore((s) => s.modules);
+  const sink = useConfiguratorStore((s) => s.sink);
   const removeModule = useConfiguratorStore((s) => s.removeModule);
   const rotateModule = useConfiguratorStore((s) => s.rotateModule);
   const dragPreview = useConfiguratorStore((s) => s.dragPreview);
@@ -408,6 +440,8 @@ export function BuildCanvas() {
             }}
           />
         )}
+
+        {sink && <DraggableSink sink={sink} scale={scale} canvasHeight={canvasHeight} />}
       </div>
       </div>
 
