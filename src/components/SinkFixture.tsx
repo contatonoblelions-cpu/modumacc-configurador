@@ -1,8 +1,16 @@
 /**
- * Desenho plano (sem profundidade/sombra, ver remoção do IsoBevel) de uma
- * pia de cozinha com torneira, vista de frente -- usado só como um ícone
- * visual posicionado sobre a bancada (ver `DraggableSink` em
- * `BuildCanvas.tsx`), não representa um módulo real do catálogo.
+ * Desenho plano (sem profundidade/sombra), vista de FRENTE (elevação),
+ * igual ao resto do desenho da bancada/módulos -- NÃO é uma cuba vista de
+ * cima (era esse o problema antes: a cuba antiga era desenhada olhando
+ * pra dentro dela, de cima, enquanto tudo mais no BuildCanvas é desenhado
+ * de frente). Aqui a pia aparece como a frente do tanque encaixado na
+ * bancada (a faixa escura, ver `COUNTERTOP_RATIO` em `BuildCanvas.tsx`) e
+ * a torneira em pé por cima, os dois vistos de frente.
+ *
+ * O viewBox e a proporção acima/abaixo da linha da bancada são combinados
+ * com o posicionamento em `DraggableSink` (`BuildCanvas.tsx`): ~70% da
+ * altura fica acima da linha da bancada (torneira) e ~30% abaixo (frente
+ * do tanque).
  */
 interface SinkFixtureProps {
   className?: string;
@@ -16,15 +24,25 @@ export function SinkFixture({ className }: SinkFixtureProps) {
       preserveAspectRatio="xMidYMid meet"
       aria-label="Pia com torneira"
     >
-      {/* Cuba da pia */}
-      <rect x="10" y="30" width="180" height="80" rx="10" fill="#dfe6ea" stroke="#9aa7ae" strokeWidth="3" />
-      <rect x="26" y="46" width="148" height="52" rx="8" fill="#c7d2d8" stroke="#9aa7ae" strokeWidth="2" />
-      {/* Ralo */}
-      <circle cx="100" cy="72" r="7" fill="#8a969c" />
-      {/* Torneira */}
-      <rect x="92" y="6" width="16" height="30" rx="4" fill="#7c8a91" />
-      <path d="M92 14 C 60 14, 55 34, 55 46" stroke="#7c8a91" strokeWidth="12" fill="none" strokeLinecap="round" />
-      <circle cx="55" cy="46" r="6" fill="#5f6b71" />
+      {/* Torneira, vista de frente: coluna + bica curva, centralizada */}
+      <rect x="93" y="18" width="14" height="50" rx="4" fill="#7c8a91" />
+      <path d="M93 26 C 68 26, 62 40, 62 54" stroke="#7c8a91" strokeWidth="11" fill="none" strokeLinecap="round" />
+      <circle cx="62" cy="54" r="5.5" fill="#5f6b71" />
+      {/* Registro/manípulo */}
+      <rect x="107" y="30" width="16" height="6" rx="3" fill="#8a969c" />
+
+      {/* Frente do tanque, encaixado na bancada -- vista de frente, não de cima */}
+      <rect x="14" y="82" width="172" height="34" rx="5" fill="#dbe2e6" stroke="#9aa7ae" strokeWidth="2.5" />
+      {/* Friso do rebordo, logo abaixo da linha da bancada */}
+      <rect x="14" y="82" width="172" height="6" fill="#c2ccd1" />
+      {/* Sombra leve na base da frente do tanque, mesma linguagem visual do rodapé dos módulos */}
+      <rect x="14" y="104" width="172" height="12" rx="5" fill="url(#sinkFrontShadow)" />
+      <defs>
+        <linearGradient id="sinkFrontShadow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#000000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000000" stopOpacity="0.18" />
+        </linearGradient>
+      </defs>
     </svg>
   );
 }

@@ -387,7 +387,7 @@ export function BuildCanvas() {
   const canvasHeight = Math.round(Math.min(CANVAS_MAX_H_PX, Math.max(CANVAS_MIN_H_PX, room.heightCm * scale)));
 
   return (
-    <div className="order-1 flex flex-1 overflow-auto p-3 md:order-none md:p-6">
+    <div className="order-1 flex flex-1 overflow-y-auto overflow-x-hidden p-3 md:order-none md:overflow-visible md:p-6">
       {/*
         Parede lateral esquerda — tira decorativa só no desktop (tem espaço
         sobrando), dá o contexto de "ambiente" ao redor da parede principal,
@@ -404,7 +404,7 @@ export function BuildCanvas() {
           clipPath: 'polygon(0 6%, 100% 0, 100% 100%, 0 94%)',
         }}
       />
-      <div ref={wrapperRef} className="min-w-0 flex-1 px-1 md:px-3">
+      <div className="min-w-0 flex-1 px-1 md:px-3">
         <div className="mb-1.5 md:mb-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-navy-800 md:hidden">
           Área de montagem — escala real (fixa)
@@ -425,10 +425,23 @@ export function BuildCanvas() {
         na tela de entrada, na MESMA escala do quadriculado/dos módulos —
         pedido do cliente pra sempre ter noção da escala real olhando pras
         bordas, igual um desenho técnico.
+
+        IMPORTANTE (bug de mobile corrigido aqui): o `ref` de medição
+        (`wrapperRef`, usado pelo `ResizeObserver` que define `canvasWidth`)
+        fica na COLUNA que sobra depois da régua vertical -- não mais no
+        container inteiro. Antes ele media o espaço TOTAL e a régua ainda
+        tentava caber DENTRO desse mesmo espaço (com um `+28` chutado a
+        mais), o que sempre estourava a largura disponível em uns 28px e
+        deixava essa faixa cronicamente scrollável na horizontal. Num
+        celular isso vira uma área que "corre"/treme sozinha ao tocar pra
+        rolar a tela (o dedo mexe numa rolagem horizontal escondida em vez
+        de só rolar a página verticalmente). Com o `flex` cuidando do
+        tamanho (sem `maxWidth` chutado), a régua vertical e a coluna do
+        quadrante sempre somam exatamente o espaço disponível, nunca mais.
       */}
-      <div className="flex items-start" style={{ maxWidth: canvasWidth + 28 }}>
+      <div className="flex items-start">
         <RulerVertical heightCm={room.heightCm} scale={scale} />
-        <div className="min-w-0 flex-1">
+        <div ref={wrapperRef} className="min-w-0 flex-1">
           <RulerHorizontal widthCm={room.widthCm} scale={scale} />
 
       {/*
@@ -444,11 +457,11 @@ export function BuildCanvas() {
         // ações flutuante, igual clicar fora de um menu.
         onClick={() => setSelectedInstanceId(null)}
         style={{
-          maxWidth: canvasWidth,
+          width: canvasWidth,
           height: canvasHeight,
           backgroundImage: 'linear-gradient(180deg, #fbf9f6 0%, #f4efe6 88%, #ece2cf 100%)',
         }}
-        className="relative w-full overflow-hidden rounded-xl border border-brand-silver-200 md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
+        className="relative max-w-full overflow-hidden rounded-xl border border-brand-silver-200 md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
       >
         {/*
           Quadriculado igual escala real (10cm/50cm) por DENTRO do
@@ -512,29 +525,29 @@ export function BuildCanvas() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0"
           style={{
+            bottom: '7%',
+            height: '2%',
+            backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.28) 100%)',
+          }}
+        />
+
+        {/*
+          Backsplash + bancada — a linha divisória entre a faixa de módulos
+          de PAREDE (em cima) e a faixa de módulos de CHÃO (embaixo, ver
+          `utils/bands.ts` > `COUNTERTOP_RATIO`), desenhada como um corte
+          humanizado de verdade: um friso de azulejo sutil logo acima da
+          bancada, e a própria bancada como uma faixa mais escura com
+          sombra, igual um tampo de granito/quartzo visto de frente. 100%
+          decorativo — não interfere na posição livre dos módulos, só dá o
+          contexto visual da referência que o cliente mandou.
+        */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0"
+          style={{
             top: `${Math.max(0, COUNTERTOP_RATIO * 100 - 10.6)}%`,
             height: '0.6%',
             backgroundImage: 'linear-gradient(180deg, rgba(255,214,140,0.55) 0%, rgba(255,214,140,0) 100%)',
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0"
-          style={{
-            top: `${Math.max(0, COUNTERTOP_RATIO * 100 - 10)}%`,
-            height: '10%',
-            backgroundImage:
-              'repeating-linear-gradient(90deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px), repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px)',
-            backgroundColor: '#efe9dd',
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0"
-          style={{
-            top: `${COUNTERTOP_RATIO * 100}%`,
-            height: '3%',
-            backgroundImage: 'linear-gradient(180deg, gradient(180deg, rgba(255,214,140,0.55) 0%, rgba(255,214,140,0) 100%)',
           }}
         />
         <div
