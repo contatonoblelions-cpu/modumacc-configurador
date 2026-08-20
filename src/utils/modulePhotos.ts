@@ -8,6 +8,17 @@
  */
 
 const NICHO = '/modules/nicho.jpg';
+/**
+ * Módulo "Nichos Superior" (2025-08-20): a imagem original mostrava DOIS
+ * corpos empilhados - um armario fechado em cima e um nicho ABERTO/vazado
+ * embaixo (prateleira sem porta). O produto real da Modumacc e so o
+ * armario fechado (a parte vazada nao existe fisicamente, confundia o
+ * cliente). `NICHO` agora e SO o recorte de cima (fechado); a imagem
+ * original completa (com o nicho aberto) foi preservada como
+ * `MICROONDAS`, que e realmente um nicho aberto pra encaixar o
+ * eletrodomestico.
+ */
+const MICROONDAS = '/modules/microondas.jpg';
 const BASCULANTE = '/modules/basculante.jpg';
 const PORTA_SUPERIOR = '/modules/porta-superior.jpg';
 const PORTAS_INFERIOR = '/modules/portas-inferior.jpg';
@@ -16,7 +27,7 @@ const GAVETAS = '/modules/gavetas.jpg';
 /** Cada formato do catálogo -> imagem 2D correspondente. */
 const MODULE_PHOTOS: Record<string, string> = {
   nicho: NICHO,
-  microondas: NICHO,
+  microondas: MICROONDAS,
   basculante: BASCULANTE,
   'porta-1-superior': PORTA_SUPERIOR,
   'porta-2-superior': PORTA_SUPERIOR,
