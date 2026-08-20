@@ -220,7 +220,7 @@ function App() {
     return (
       <>
         <AppBackground />
-        <div className="flex h-screen flex-col">
+        <div className="flex h-dvh flex-col">
           <Header />
           <RoomSizeForm />
         </div>
@@ -237,7 +237,7 @@ function App() {
       onDragCancel={handleDragCancel}
     >
       <AppBackground />
-      <div className="flex h-screen flex-col">
+      <div className="flex h-dvh flex-col">
         <Header />
         <FinishHandleSelector />
         {/*

@@ -29,6 +29,12 @@
 
 html, body, #root {
   height: 100%;
+  /* Evita o bounce/rubber-band de rolagem da página inteira no iOS/Android
+     -- combinado com o h-dvh e os overflow internos do App.tsx/BuildCanvas.tsx,
+     ninguém mais precisa que a PÁGINA em si role; só as áreas internas
+     marcadas (faixa de módulos, área de montagem) rolam. Corrige o
+     "correndo/tremendo" ao tocar pra rolar no celular. */
+  overscroll-behavior: none;
 }
 
 body {
