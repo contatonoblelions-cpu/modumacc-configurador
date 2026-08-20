@@ -55,7 +55,7 @@ export function ModuleSchematic({ name, className, finishImageUrl, handleColor }
       <rect x="0" y="0" width="100" height="100" fill="#F5F7F7" />
       {type === 'porta' && <Portas count={count} fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
       {type === 'gaveta' && <Gavetas count={count} fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
-      {type === 'nicho' && <Nicho fill={fill} />}
+      {type === 'nicho' && <Nicho fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
       {type === 'microondas' && <Microondas fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
       {type === 'basculante' && <Basculante fill={fill} />}
       {type === 'generic' && <Generic fill={fill} />}
@@ -126,11 +126,24 @@ function Gavetas({ count, fill, handleFill, handleStroke }: { count: number; fil
   );
 }
 
-function Nicho({ fill }: { fill: string }) {
+function Nicho({ fill, handleFill, handleStroke }: { fill: string } & HandleProps) {
+  // Apesar do nome "Nichos" no catalogo, a peca real e um armario fechado
+  // com porta e puxador (ver foto do produto) - nao um nicho aberto/vazado.
+  // Por isso o desenho e o mesmo de uma porta unica, sem linha de prateleira
+  // nem borda tracejada (que antes dava a impressao errada de vao aberto).
   return (
     <>
-      <rect x="2" y="2" width="96" height="96" fill={fill} stroke="#2E5A79" strokeWidth={2.5} strokeDasharray="5 3" />
-      <line x1="2" y1="52" x2="98" y2="52" stroke="#6B8285" strokeWidth={2} />
+      <rect x="2" y="2" width="96" height="96" fill={fill} stroke="#2E5A79" strokeWidth={2.5} />
+      <rect
+        x={8}
+        y={46}
+        width={3}
+        height={10}
+        rx={1.5}
+        fill={handleFill}
+        stroke={handleStroke}
+        strokeWidth={handleStroke ? 0.5 : 0}
+      />
     </>
   );
 }

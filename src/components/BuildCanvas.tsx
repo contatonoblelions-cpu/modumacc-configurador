@@ -40,6 +40,138 @@ function DraggableSink({ sink, scale, canvasHeight }: { sink: SinkFixtureData; s
   );
 }
 
+/**
+ * Passo (em cm) das marcações da régua — quanto maior o ambiente, mais
+ * espaçadas as marcas, pra não virar uma sopa de números.
+ */
+function rulerStep(totalCm: number): number {
+  if (totalCm <= 200) return 25;
+  if (totalCm <= 400) return 50;
+  return 100;
+}
+
+function rulerTicks(totalCm: number): number[] {
+  const step = rulerStep(totalCm);
+  const ticks: number[] = [];
+  for (let cm = 0; cm <= totalCm; cm += step) ticks.push(cm);
+  if (ticks[ticks.length - 1] !== totalCm) ticks.push(totalCm);
+  return ticks;
+}
+
+/**
+ * Régua horizontal (topo) com as medidas de largura que a pessoa configurou
+ * na tela de entrada — mesma escala (`scale`) usada pra posicionar os
+ * módulos, então as marcas sempre batem com o quadriculado por baixo.
+ */
+function RulerHorizontal({ widthCm, scale }: { widthCm: number; scale: number }) {
+  return (
+    <div className="relative mb-1 h-4 select-none md:h-5" style={{ width: widthCm * scale }}>
+      {rulerTicks(widthCm).map((cm) => (
+        <div key={cm} className="absolute top-0 flex -translate-x-1/2 flex-col items-center" style={{ left: cm * scale }}>
+          <span className="text-[8px] leading-none text-brand-silver-600 md:text-[9px]">{cm}</span>
+          <div className="mt-0.5 h-1.5 w-px bg-brand-silver-400" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Régua vertical (lateral) com as medidas de altura configuradas — mesma
+ * ideia da horizontal, só que de cima pra baixo.
+ */
+function RulerVertical({ heightCm, scale }: { heightCm: number; scale: number }) {
+  return (
+    <div className="relative mr-1 w-6 shrink-0 select-none md:w-7" style={{ height: heightCm * scale }}>
+      {rulerTicks(heightCm).map((cm) => (
+        <div key={cm} className="absolute right-0 flex -translate-y-1/2 items-center gap-0.5" style={{ top: cm * scale }}>
+          <span className="text-[8px] leading-none text-brand-silver-600 md:text-[9px]">{cm}</span>
+          <div className="h-px w-1.5 bg-brand-silver-400" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Linhas de cota (estilo CAD/planta técnica, referência que o cliente
+ * mandou) mostrando a distância do módulo sendo arrastado até as paredes
+ * mais próximas (esquerda/direita/topo/base) em tempo real, igual um
+ * software de projeto 3D. Só aparece durante o arrasto (`dragPreview`).
+ */
+function DragDimensionLines({
+  preview,
+  roomWidthCm,
+  roomHeightCm,
+  scale,
+}: {
+  preview: { x: number; y: number; widthCm: number; heightCm: number };
+  roomWidthCm: number;
+  roomHeightCm: number;
+  scale: number;
+}) {
+  const leftCm = Math.max(0, preview.x);
+  const rightCm = Math.max(0, roomWidthCm - (preview.x + preview.widthCm));
+  const topCm = Math.max(0, preview.y);
+  const bottomCm = Math.max(0, roomHeightCm - (preview.y + preview.heightCm));
+
+  const midY = (preview.y + preview.heightCm / 2) * scale;
+  const midX = (preview.x + preview.widthCm / 2) * scale;
+
+  return (
+    <>
+      {leftCm > 0.5 && (
+        <DimLineH x1={0} x2={preview.x * scale} y={midY} label={`${Math.round(leftCm)}cm`} />
+      )}
+      {rightCm > 0.5 && (
+        <DimLineH
+          x1={(preview.x + preview.widthCm) * scale}
+          x2={roomWidthCm * scale}
+          y={midY}
+          label={`${Math.round(rightCm)}cm`}
+        />
+      )}
+      {topCm > 0.5 && (
+        <DimLineV y1={0} y2={preview.y * scale} x={midX} label={`${Math.round(topCm)}cm`} />
+      )}
+      {bottomCm > 0.5 && (
+        <DimLineV
+          y1={(preview.y + preview.heightCm) * scale}
+          y2={roomHeightCm * scale}
+          x={midX}
+          label={`${Math.round(bottomCm)}cm`}
+        />
+      )}
+    </>
+  );
+}
+
+function DimLineH({ x1, x2, y, label }: { x1: number; x2: number; y: number; label: string }) {
+  return (
+    <div className="pointer-events-none absolute z-30" style={{ left: x1, top: y - 8, width: Math.max(0, x2 - x1), height: 16 }}>
+      <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-emerald-500/80" />
+      <div className="absolute left-0 top-0 h-full w-px bg-emerald-500/80" />
+      <div className="absolute right-0 top-0 h-full w-px bg-emerald-500/80" />
+      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[140%] whitespace-nowrap rounded bg-white/90 px-1 text-[9px] font-semibold text-emerald-700 shadow-sm">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function DimLineV({ y1, y2, x, label }: { y1: number; y2: number; x: number; label: string }) {
+  return (
+    <div className="pointer-events-none absolute z-30" style={{ top: y1, left: x - 8, height: Math.max(0, y2 - y1), width: 16 }}>
+      <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-emerald-500/80" />
+      <div className="absolute left-0 top-0 h-px w-full bg-emerald-500/80" />
+      <div className="absolute bottom-0 left-0 h-px w-full bg-emerald-500/80" />
+      <span className="absolute left-1/2 top-1/2 -translate-y-1/2 translate-x-2 whitespace-nowrap rounded bg-white/90 px-1 text-[9px] font-semibold text-emerald-700 shadow-sm">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 const CANVAS_MAX_PX = 760;
 /** Altura mínima/máxima do quadrante em px, só pra não ficar minúsculo ou gigante em ambientes muito baixos/altos. */
 const CANVAS_MIN_H_PX = 220;
@@ -289,6 +421,17 @@ export function BuildCanvas() {
       )}
 
       {/*
+        Réguas (topo + lateral) com as medidas reais que a pessoa configurou
+        na tela de entrada, na MESMA escala do quadriculado/dos módulos —
+        pedido do cliente pra sempre ter noção da escala real olhando pras
+        bordas, igual um desenho técnico.
+      */}
+      <div className="flex items-start" style={{ maxWidth: canvasWidth + 28 }}>
+        <RulerVertical heightCm={room.heightCm} scale={scale} />
+        <div className="min-w-0 flex-1">
+          <RulerHorizontal widthCm={room.widthCm} scale={scale} />
+
+      {/*
         UM ÚNICO quadrante — a parede inteira, sem divisão nenhuma. O
         droppable cobre o quadrante todo (`WALL_DROPPABLE_ID`); o ponto exato
         (X, Y) de onde soltar é calculado em `App.tsx` a partir do retângulo
@@ -307,6 +450,24 @@ export function BuildCanvas() {
         }}
         className="relative w-full overflow-hidden rounded-xl border border-brand-silver-200 md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
       >
+        {/*
+          Quadriculado igual escala real (10cm/50cm) por DENTRO do
+          quadrante inteiro — pedido do cliente: antes só existia do lado de
+          fora (fundo do app, `AppBackground.tsx`); agora ele serve de régua
+          visual embaixo dos módulos também, do começo ao fim do ambiente
+          (linhas finas a cada 10cm, mais fortes a cada 50cm).
+        */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(46,90,121,0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(46,90,121,0.55) 1px, transparent 1px), linear-gradient(rgba(46,90,121,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(46,90,121,0.16) 1px, transparent 1px)',
+            backgroundSize: `${50 * scale}px ${50 * scale}px, ${50 * scale}px ${50 * scale}px, ${10 * scale}px ${10 * scale}px, ${10 * scale}px ${10 * scale}px`,
+            opacity: 0.12,
+          }}
+        />
+
         {/*
           Rodateto/moldura de gesso no topo — friso fino com sombra, igual
           ao acabamento de forro na referência do cliente ("Corte 01 |
@@ -351,29 +512,29 @@ export function BuildCanvas() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0"
           style={{
-            bottom: '7%',
-            height: '2%',
-            backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.28) 100%)',
+            top: `${Math.max(0, COUNTERTOP_RATIO * 100 - 10.6)}%`,
+            height: '0.6%',
+            backgroundImage: 'linear-gradient(180deg, rgba(255,214,140,0.55) 0%, rgba(255,214,140,0) 100%)',
           }}
         />
-
-        {/*
-          Backsplash + bancada — a linha divisória entre a faixa de módulos
-          de PAREDE (em cima) e a faixa de módulos de CHÃO (embaixo, ver
-          `utils/bands.ts` > `COUNTERTOP_RATIO`), desenhada como um corte
-          humanizado de verdade: um friso de azulejo sutil logo acima da
-          bancada, e a própria bancada como uma faixa mais escura com
-          sombra, igual um tampo de granito/quartzo visto de frente. 100%
-          decorativo — não interfere na posição livre dos módulos, só dá o
-          contexto visual da referência que o cliente mandou.
-        */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0"
           style={{
-            top: `${Math.max(0, COUNTERTOP_RATIO * 100 - 10.6)}%`,
-            height: '0.6%',
-            backgroundImage: 'linear-gradient(180deg, rgba(255,214,140,0.55) 0%, rgba(255,214,140,0) 100%)',
+            top: `${Math.max(0, COUNTERTOP_RATIO * 100 - 10)}%`,
+            height: '10%',
+            backgroundImage:
+              'repeating-linear-gradient(90deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px), repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px)',
+            backgroundColor: '#efe9dd',
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0"
+          style={{
+            top: `${COUNTERTOP_RATIO * 100}%`,
+            height: '3%',
+            backgroundImage: 'linear-gradient(180deg, gradient(180deg, rgba(255,214,140,0.55) 0%, rgba(255,214,140,0) 100%)',
           }}
         />
         <div
@@ -430,18 +591,28 @@ export function BuildCanvas() {
           na store).
         */}
         {dragPreview && (
-          <div
-            className="pointer-events-none absolute rounded-md border-2 border-dashed border-brand-navy-400 bg-brand-navy-100/70"
-            style={{
-              left: dragPreview.x * scale,
-              top: dragPreview.y * scale,
-              width: dragPreview.widthCm * scale,
-              height: dragPreview.heightCm * scale,
-            }}
-          />
+          <>
+            <div
+              className="pointer-events-none absolute rounded-md border-2 border-dashed border-brand-navy-400 bg-brand-navy-100/70"
+              style={{
+                left: dragPreview.x * scale,
+                top: dragPreview.y * scale,
+                width: dragPreview.widthCm * scale,
+                height: dragPreview.heightCm * scale,
+              }}
+            />
+            <DragDimensionLines
+              preview={dragPreview}
+              roomWidthCm={room.widthCm}
+              roomHeightCm={room.heightCm}
+              scale={scale}
+            />
+          </>
         )}
 
         {sink && <DraggableSink sink={sink} scale={scale} canvasHeight={canvasHeight} />}
+      </div>
+        </div>
       </div>
       </div>
 
