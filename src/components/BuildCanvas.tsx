@@ -15,6 +15,13 @@ import { COUNTERTOP_RATIO } from '../utils/bands';
  * `top` fixo), a pessoa arrasta pra qualquer ponto ao longo do balcão (ver
  * `moveSink`/`computeSinkX` em `App.tsx`/`configuratorStore.ts`). Não
  * colide com módulos, é só um desenho por cima (ver `SinkFixture.tsx`).
+ *
+ * z-index: em repouso a pia fica em `z-0` (abaixo dos módulos colocados,
+ * que ficam em `z-10`/`z-20`/`z-30` conforme o estado) -- se um módulo for
+ * arrastado pra cima da pia, o módulo tem que aparecer NA FRENTE, nunca a
+ * pia por cima do módulo (bug relatado pelo cliente). Só durante o
+ * arrasto da própria pia ela sobe pra `z-30`, pra ficar visível acima de
+ * tudo enquanto está sendo posicionada.
  */
 function DraggableSink({ sink, scale, canvasHeight }: { sink: SinkFixtureData; scale: number; canvasHeight: number }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -30,8 +37,8 @@ function DraggableSink({ sink, scale, canvasHeight }: { sink: SinkFixtureData; s
       {...listeners}
       {...attributes}
       style={{ left: sink.offsetXCm * scale, top: topPx, width: sizePx, height: sizePx * 0.6 }}
-      className={`absolute z-20 touch-none cursor-grab transition active:cursor-grabbing ${
-        isDragging ? 'opacity-60' : ''
+      className={`absolute z-0 touch-none cursor-grab transition active:cursor-grabbing ${
+        isDragging ? 'z-30 opacity-60' : ''
       }`}
       title="Arraste para posicionar a pia"
     >
@@ -262,11 +269,11 @@ function PlacedModuleBox({
         width: m.widthCm * scale,
         height: m.heightCm * scale,
       }}
-      className={`group absolute ring-1 transition ${
+      className={`group absolute z-10 ring-1 transition ${
         isDragging
-          ? 'z-20 opacity-30 ring-2 ring-brand-navy-400'
+          ? 'z-30 opacity-30 ring-2 ring-brand-navy-400'
           : selected
-            ? 'z-10 ring-2 ring-brand-navy-500'
+            ? 'z-20 ring-2 ring-brand-navy-500'
             : 'ring-black/10'
       }`}
     >
