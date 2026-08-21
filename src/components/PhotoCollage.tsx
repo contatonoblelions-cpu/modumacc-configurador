@@ -71,7 +71,7 @@ export function PhotoCollage() {
                   }}
                 >
                   {hasPhoto ? (
-                    <ModulePhoto name={m.moduleName} finish={finish} className="h-full w-full" />
+                                  <ModulePhoto name={m.moduleName} finish={finish} handle={handle} className="h-full w-full" />
                   ) : (
                     <ModuleSchematic
                       name={m.moduleName}
