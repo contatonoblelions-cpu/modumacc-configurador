@@ -38,6 +38,7 @@ interface Props {
 export function ModuleChip({ module }: Props) {
   const addModule = useConfiguratorStore((s) => s.addModule);
   const finish = useConfiguratorStore((s) => s.finish);
+  const handle = useConfiguratorStore((s) => s.handle);
   const widthCm = module.availableWidths[0] ?? 0;
   const hasPhoto = hasModulePhoto(module.name);
 
@@ -60,7 +61,7 @@ export function ModuleChip({ module }: Props) {
         title={`Adicionar ${module.name}`}
       >
         {hasPhoto && (
-          <ModulePhoto name={module.name} finish={finish} className="absolute inset-0 h-full w-full" />
+          <ModulePhoto name={module.name} finish={finish handle={handle}} className="absolute inset-0 h-full w-full" />
         )}
         {hasPhoto && (
           <div
