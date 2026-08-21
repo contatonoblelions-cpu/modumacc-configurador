@@ -13,13 +13,13 @@
  * Descoberto rodando o deploy de verdade na Vercel — ver README.
  */
 function readEnv(value: string | undefined): string | undefined {
-  return value ? value : undefined;
+    return value ? value : undefined;
 }
 
 /** URL base do site (sem barra final). Sobrescreva via .env com VITE_WOO_SITE_URL. */
 export const WOO_SITE_URL: string =
-  readEnv(import.meta.env.VITE_WOO_SITE_URL as string | undefined)?.replace(/\/$/, '') ??
-  'https://modumacc.com.br';
+    readEnv(import.meta.env.VITE_WOO_SITE_URL as string | undefined)?.replace(/\/$/, '') ??
+    'https://modumacc.com.br';
 
 /**
  * Base da Store API — passa pelo proxy same-origin `/api/wc` (ver
@@ -45,10 +45,10 @@ export const STORE_API_BASE = '/api/wc';
  * resolve pastas com colchetes.
  */
 export function wcUrl(pathAndQuery: string): string {
-  const [path, query] = pathAndQuery.split('?');
-  const params = new URLSearchParams(query);
-  params.set('path', path);
-  return `${STORE_API_BASE}?${params.toString()}`;
+    const [path, query] = pathAndQuery.split('?');
+    const params = new URLSearchParams(query);
+    params.set('path', path);
+    return `${STORE_API_BASE}?${params.toString()}`;
 }
 
 /**
@@ -57,14 +57,14 @@ export function wcUrl(pathAndQuery: string): string {
  * Se o cliente reorganizar categorias, ajuste aqui ou via VITE_WOO_CATEGORY_ID.
  */
 export const KITCHEN_CATEGORY_ID: number = Number(
-  readEnv(import.meta.env.VITE_WOO_CATEGORY_ID as string | undefined) ?? 23,
-);
+    readEnv(import.meta.env.VITE_WOO_CATEGORY_ID as string | undefined) ?? 23,
+  );
 
 /** Nomes exatos dos atributos, como cadastrados no WooCommerce (confirmados na API real). */
 export const ATTR_NAMES = {
-  finish: 'Cor',
-  handle: 'Acabamento do puxador',
-  dimensions: 'Medidas: Largura x Altura x Profundidade',
+    finish: 'Cor',
+    handle: 'Acabamento do puxador',
+    dimensions: 'Medidas: Largura x Altura x Profundidade',
 } as const;
 
 export const NO_HANDLE_VALUE = 'Não se aplica';
@@ -78,15 +78,17 @@ export const NO_HANDLE_VALUE = 'Não se aplica';
  * - 921 "Modulo 2 Gavetas": ficou duplicado na pratica com outro modulo de
  *   gavetas (mesmas larguras 40/50/60), pedido remover a repeticao.
  * - 868 "Modulo 1 Porta Inferior": proporcao errada no desenho/foto.
+ *
+ * 2026-08-20: reexibidos apos troca por fotos reais (motivo original resolvido).
  */
+export const HIDDEN_PRODUCT_IDS: number[] = [];
 
-export const HIDDEN_PRODUCT_IDS: number[] = []; // 2026-08-20: reexibidos apos troca por fotos reais (motivo original resolvido)
+/**
  * Larguras escondidas de um produto especifico que continua existindo com
  * as outras larguras. Motivo confirmado com o cliente em 2026-08-20:
  * - 1282 "Modulo Nichos Superior": esconder so a largura de 15cm
  *   (proporcao errada nessa largura especifica); a de 20cm continua normal.
  */
 export const HIDDEN_WIDTHS_BY_PRODUCT: Record<number, number[]> = {
-  1282: [15],
+    1282: [15],
 };
-
