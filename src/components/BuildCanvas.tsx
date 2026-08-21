@@ -191,6 +191,7 @@ interface PlacedModuleBoxProps {
   m: PlacedModule;
   scale: number;
   finish: string | null;
+    handle: string | null;
   finishImageUrl: string | null;
   handleColor: { fill: string; stroke: string } | null;
   selected: boolean;
@@ -235,6 +236,7 @@ function PlacedModuleBox({
   m,
   scale,
   finish,
+    handle,
   finishImageUrl,
   handleColor,
   selected,
@@ -285,7 +287,7 @@ function PlacedModuleBox({
           className="relative h-full w-full touch-none cursor-grab transition-transform active:cursor-grabbing"
         >
           {hasPhoto ? (
-            <ModulePhoto name={m.moduleName} finish={finish} className="absolute inset-0 h-full w-full" />
+                        <ModulePhoto name={m.moduleName} finish={finish} handle={handle} className="absolute inset-0 h-full w-full" />
           ) : (
             <ModuleSchematic
               name={m.moduleName}
@@ -591,6 +593,7 @@ export function BuildCanvas() {
             m={m}
             scale={scale}
             finish={finish}
+                        handle={handle}
             finishImageUrl={finishImageUrl}
             handleColor={handleColor}
             selected={selectedInstanceId === m.instanceId}
