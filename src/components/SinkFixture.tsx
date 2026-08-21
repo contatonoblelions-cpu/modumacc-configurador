@@ -56,4 +56,3 @@ export function SinkFixture({ className }: SinkFixtureProps) {
           </svg>
         );
 }
-</svg>
