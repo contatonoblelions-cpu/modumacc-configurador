@@ -52,7 +52,7 @@ export function ModuleCard({ module }: Props) {
         {/* Miniatura plana da imagem do módulo (só a frente, sem profundidade 3D). */}
         <div className="relative mb-2 h-24 w-full">
           {hasModulePhoto(module.name) ? (
-            <ModulePhoto name={module.name} finish={finish} className="h-full w-full rounded-lg" />
+                          <ModulePhoto name={module.name} finish={finish} handle={handle} className="h-full w-full rounded-lg" />
           ) : (
             <ModuleSchematic
               name={module.name}
