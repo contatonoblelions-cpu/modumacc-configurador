@@ -79,9 +79,8 @@ export const NO_HANDLE_VALUE = 'Não se aplica';
  *   gavetas (mesmas larguras 40/50/60), pedido remover a repeticao.
  * - 868 "Modulo 1 Porta Inferior": proporcao errada no desenho/foto.
  */
-export const HIDDEN_PRODUCT_IDS: number[] = [1147, 921, 868];
 
-/**
+export const HIDDEN_PRODUCT_IDS: number[] = []; // 2026-08-20: reexibidos apos troca por fotos reais (motivo original resolvido)
  * Larguras escondidas de um produto especifico que continua existindo com
  * as outras larguras. Motivo confirmado com o cliente em 2026-08-20:
  * - 1282 "Modulo Nichos Superior": esconder so a largura de 15cm
