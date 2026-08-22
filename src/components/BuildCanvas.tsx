@@ -7,8 +7,9 @@ import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
 import { SinkFixture } from './SinkFixture';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
-import type { PlacedModule, SinkFixture as SinkFixtureData } from '../types/composition';
+import type { PlacedModule, SinkFixture as SinkFixtureData, FridgeFixture as FridgeFixtureData } from '../types/composition';
 import { COUNTERTOP_RATIO } from '../utils/bands';
+import { FRIDGE_WIDTH_CM, FRIDGE_HEIGHT_CM, FRIDGE_PHOTO } from '../utils/fridge';
 
 /**
  * Pia arrastável -- só na horizontal (encostada na linha da bancada,
@@ -43,6 +44,47 @@ function DraggableSink({ sink, scale, canvasHeight }: { sink: SinkFixtureData; s
       title="Arraste para posicionar a pia"
     >
       <SinkFixture className="h-full w-full drop-shadow-md" />
+    </div>
+  );
+}
+
+/**
+ * Geladeira arrastável -- elemento SÓ VISUAL/referência (não é produto
+ * vendável, não tem preço, não colide com os módulos, ver `FridgeFixture`
+ * em `types/composition.ts`), mesma ideia da `DraggableSink`: só se move na
+ * horizontal, sempre encostada no chão (`topPx` fixo pela altura real da
+ * geladeira em cm x escala). Renderiza uma FOTO (não um SVG desenhado
+ * como a pia), recortada do catálogo do cliente em `public/modules/geladeira.jpg`.
+ */
+function DraggableFridge({
+  fridge,
+  scale,
+  canvasHeight,
+}: {
+  fridge: FridgeFixtureData;
+  scale: number;
+  canvasHeight: number;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: 'fridge',
+    data: { type: 'fridge' },
+  });
+  const widthPx = FRIDGE_WIDTH_CM * scale;
+  const heightPx = FRIDGE_HEIGHT_CM * scale;
+  const topPx = canvasHeight - heightPx;
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={{ left: fridge.offsetXCm * scale, top: topPx, width: widthPx, height: heightPx }}
+      className={`absolute z-0 touch-none cursor-grab transition active:cursor-grabbing ${
+        isDragging ? 'z-30 opacity-60' : ''
+      }`}
+      title="Arraste para posicionar a geladeira (referência visual)"
+    >
+      <img src={FRIDGE_PHOTO} alt="Geladeira (referência)" className="h-full w-full object-fill drop-shadow-md" />
     </div>
   );
 }
@@ -362,6 +404,7 @@ export function BuildCanvas() {
   const room = useConfiguratorStore((s) => s.room);
   const modules = useConfiguratorStore((s) => s.modules);
   const sink = useConfiguratorStore((s) => s.sink);
+  const fridge = useConfiguratorStore((s) => s.fridge);
   const removeModule = useConfiguratorStore((s) => s.removeModule);
   const rotateModule = useConfiguratorStore((s) => s.rotateModule);
   const dragPreview = useConfiguratorStore((s) => s.dragPreview);
@@ -634,6 +677,7 @@ export function BuildCanvas() {
         )}
 
         {sink && <DraggableSink sink={sink} scale={scale} canvasHeight={canvasHeight} />}
+        {fridge && <DraggableFridge fridge={fridge} scale={scale} canvasHeight={canvasHeight} />}
       </div>
         </div>
       </div>
