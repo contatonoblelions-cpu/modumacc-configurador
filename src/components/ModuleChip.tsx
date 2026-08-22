@@ -61,7 +61,7 @@ export function ModuleChip({ module }: Props) {
         title={`Adicionar ${module.name}`}
       >
         {hasPhoto && (
-          <ModulePhoto name={module.name} finish={finish handle={handle}} className="absolute inset-0 h-full w-full" />
+          <ModulePhoto name={module.name} finish={finish} handle={handle} className="absolute inset-0 h-full w-full" />
         )}
         {hasPhoto && (
           <div
