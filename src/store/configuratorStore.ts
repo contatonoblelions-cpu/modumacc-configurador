@@ -179,7 +179,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       // `utils/bands.ts`). Dentro da própria faixa continua livre em X e Y.
       const band = getModuleBand(mod.name);
           const yBounds = getBandYRange(band, room, mod.heightCm);
-          const packed = packedPositionCm(others, size, room, yBounds);
+          const packed = packedPositionCm(others, size, room, yBounds, band === 'base' ? 'bottom' : 'top');
           // Sem ponto explícito -> primeiro canto livre da faixa (botão "+
       // Adicionar", deep-link). Com ponto explícito (soltar arrastando) ->
       // resolve pro ponto livre mais próximo de onde o dedo soltou, sem
