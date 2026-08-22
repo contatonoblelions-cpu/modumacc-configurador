@@ -1,85 +1,106 @@
 /**
- * Imagens 2D CHAPADAS de cada formato de módulo (desenhos planos, sem
- * perspectiva/sombra) — a pedido do cliente, TODOS os módulos usam essas
- * imagens no lugar das fotos. Os arquivos ficam em `public/modules/` e são
- * servidos na raiz do site (ex.: `/modules/nicho.jpg`). Um `Record` mapeia
- * cada formato do catálogo pra uma das imagens e `getModulePhoto` resolve
- * pelo nome do produto.
+ * Fotos EXATAS de cada módulo, em cada combinação de acabamento x puxador.
  *
- * 2026-08-20: o cliente mandou o recorte REAL de cada um dos 9 produtos
- * (tirado direto do catálogo da loja), então cada formato agora tem sua
- * própria foto -- antes 5 imagens eram reaproveitadas entre formatos
- * parecidos (ex.: 1 porta e 2 portas usavam a mesma imagem), o que deixava
- * a cor/puxador inconsistente entre módulos. Todas as 9 fotos foram
- * corrigidas por código pra baterem exatamente com o tom de branco da
- * referência que o cliente indicou (a foto do módulo "2 Gavetas").
+ * 2026-08-22: o cliente mandou o catálogo completo em PDF
+ * ("ModuMacc em perspectiva paralela frontal com puxadores.pdf") com os 8
+ * formatos de módulo + a geladeira, renderizados nas 5 cores de acabamento
+ * (Amazônia, Belline, Branco, Louro Freijó, Manhattan) x 2 puxadores
+ * (Alumínio, Bronze) = 10 combinações. Em vez de tingir uma foto neutra por
+ * CSS (sistema antigo), agora cada módulo usa a foto REAL e EXATA da sua
+ * combinação de cor/puxador, recortada diretamente do PDF do cliente.
+ *
+ * Os arquivos ficam em `public/modules/` com o padrão de nome
+ * `{formato}--{acabamento}--{puxador}.jpg` (ex.: `nicho--branco--aluminio.jpg`).
+ * `microondas` e `geladeira` não mudam de cor (o eletrodoméstico é sempre o
+ * mesmo), então têm uma foto fixa única.
  */
 
-const NICHO = '/modules/nicho.jpg';
-/**
- * Módulo "Nichos Superior" (2025-08-20): a imagem original mostrava DOIS
- * corpos empilhados - um armario fechado em cima e um nicho ABERTO/vazado
- * embaixo (prateleira sem porta). O produto real da Modumacc e so o
- * armario fechado (a parte vazada nao existe fisicamente, confundia o
- * cliente). `NICHO` agora e SO o recorte de cima (fechado); a imagem
- * original completa (com o nicho aberto) foi preservada como
- * `MICROONDAS`, que e realmente um nicho aberto pra encaixar o
- * eletrodomestico.
- */
-const MICROONDAS = '/modules/microondas.jpg';
-const BASCULANTE = '/modules/basculante.jpg';
-const PORTA_1_SUPERIOR = '/modules/porta-1-superior.jpg';
-const PORTA_2_SUPERIOR = '/modules/porta-2-superior.jpg';
-const PORTA_1_BASE = '/modules/porta-1-base.jpg';
-const PORTA_2_BASE = '/modules/porta-2-base.jpg';
-const GAVETA_2 = '/modules/gaveta-2.jpg';
-const GAVETA_3 = '/modules/gaveta-3.jpg';
-
-/** Cada formato do catálogo -> imagem 2D correspondente (foto real e própria de cada produto). */
-const MODULE_PHOTOS: Record<string, string> = {
-  nicho: NICHO,
-  microondas: MICROONDAS,
-  basculante: BASCULANTE,
-  'porta-1-superior': PORTA_1_SUPERIOR,
-  'porta-2-superior': PORTA_2_SUPERIOR,
-  'porta-1-base': PORTA_1_BASE,
-  'porta-2-base': PORTA_2_BASE,
-  'gaveta-2': GAVETA_2,
-  'gaveta-3': GAVETA_3,
+const FINISH_SLUGS: Record<string, string> = {
+    Amazônia: 'amazonia',
+    Belline: 'belline',
+    Branco: 'branco',
+    'Louro Freijó': 'louro-freijo',
+    Manhattan: 'manhattan',
 };
 
-/** Calcula a chave de formato (pra bater com `MODULE_PHOTOS`) a partir do nome do produto. */
+const HANDLE_SLUGS: Record<string, string> = {
+    Alumínio: 'aluminio',
+    Bronze: 'bronze',
+};
+
+const DEFAULT_FINISH_SLUG = 'branco';
+const DEFAULT_HANDLE_SLUG = 'aluminio';
+
+/** Formatos que têm foto exata em cada uma das 10 combinações de cor/puxador. */
+const COLOR_DEPENDENT_SHAPES = new Set([
+    'nicho',
+    'basculante', // reaproveita as fotos do "nicho" (armário fechado, visualmente igual em foto de frente)
+    'porta-1-superior',
+    'porta-2-superior',
+    'porta-1-base',
+    'porta-2-base',
+    'gaveta-2',
+    'gaveta-3',
+  ]);
+
+/** Calcula a chave de formato a partir do nome do produto. */
 export function getModuleShapeKey(name: string): string | null {
-  const normalized = name
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
+    const normalized = name
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase();
 
   if (normalized.includes('microondas')) return 'microondas';
-  if (normalized.includes('basculante')) return 'basculante';
-  if (normalized.includes('nicho')) return 'nicho';
+    if (normalized.includes('basculante')) return 'basculante';
+    if (normalized.includes('nicho')) return 'nicho';
 
   const isSuperior = normalized.includes('superior');
 
   const gavetaMatch = normalized.match(/(\d+)\s*gavetas?/);
-  if (gavetaMatch || normalized.includes('gaveta')) {
-    const key = `gaveta-${gavetaMatch ? gavetaMatch[1] : '3'}`;
-    return key in MODULE_PHOTOS ? key : 'gaveta-3';
-  }
+    if (gavetaMatch || normalized.includes('gaveta')) {
+          const n = gavetaMatch ? gavetaMatch[1] : '3';
+          return n === '2' ? 'gaveta-2' : 'gaveta-3';
+    }
 
   const portaMatch = normalized.match(/(\d+)\s*portas?/);
-  if (portaMatch || normalized.includes('porta')) {
-    const n = portaMatch ? portaMatch[1] : '1';
-    const key = `porta-${n}-${isSuperior ? 'superior' : 'base'}`;
-    if (key in MODULE_PHOTOS) return key;
-    return isSuperior ? 'porta-1-superior' : 'porta-1-base';
-  }
+    if (portaMatch || normalized.includes('porta')) {
+          const n = portaMatch ? portaMatch[1] : '1';
+          const key = `porta-${n}-${isSuperior ? 'superior' : 'base'}`;
+          if (
+                  key === 'porta-1-superior' ||
+                  key === 'porta-2-superior' ||
+                  key === 'porta-1-base' ||
+                  key === 'porta-2-base'
+                ) {
+                  return key;
+          }
+          return isSuperior ? 'porta-1-superior' : 'porta-1-base';
+    }
 
   return null;
 }
 
-/** Devolve a imagem 2D do módulo, ou `null` se o formato não for reconhecido. */
-export function getModulePhoto(name: string): string | null {
-  const key = getModuleShapeKey(name);
-  return key ? MODULE_PHOTOS[key] ?? null : null;
+/**
+ * Devolve a foto exata do módulo pra combinação de acabamento/puxador dada,
+ * ou `null` se o formato não for reconhecido. Quando `finish`/`handle` não
+ * são passados (ex.: antes do cliente escolher cor), cai no padrão
+ * Branco/Alumínio.
+ */
+export function getModulePhoto(
+    name: string,
+    finish?: string | null,
+    handle?: string | null,
+  ): string | null {
+    const key = getModuleShapeKey(name);
+    if (!key) return null;
+
+  if (key === 'microondas') return '/modules/microondas.jpg';
+
+  if (!COLOR_DEPENDENT_SHAPES.has(key)) return null;
+
+  const shape = key === 'basculante' ? 'nicho' : key;
+    const finishSlug = (finish && FINISH_SLUGS[finish]) || DEFAULT_FINISH_SLUG;
+    const handleSlug = (handle && HANDLE_SLUGS[handle]) || DEFAULT_HANDLE_SLUG;
+
+  return `/modules/${shape}--${finishSlug}--${handleSlug}.jpg`;
 }
