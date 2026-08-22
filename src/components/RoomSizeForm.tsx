@@ -16,6 +16,7 @@ export function RoomSizeForm() {
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
   const [sinkWidth, setSinkWidth] = useState('');
+  const [includeFridge, setIncludeFridge] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [processingPhoto, setProcessingPhoto] = useState(false);
@@ -58,7 +59,7 @@ export function RoomSizeForm() {
       sinkWidthCm = parsedSink;
     }
     setError(null);
-    setRoom({ widthCm, heightCm, sinkWidthCm });
+    setRoom({ widthCm, heightCm, sinkWidthCm, includeFridge });
   }
 
   return (
@@ -114,6 +115,23 @@ export function RoomSizeForm() {
             placeholder="Ex: 80"
             className="w-full rounded-lg border border-brand-silver-400 px-3 py-2 focus:border-brand-navy-700 focus:outline-none"
           />
+        </div>
+
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-brand-navy-800">
+            <input
+              type="checkbox"
+              checked={includeFridge}
+              onChange={(e) => setIncludeFridge(e.target.checked)}
+              className="h-4 w-4 rounded border-brand-silver-400 text-brand-navy-800 focus:ring-brand-navy-700"
+            />
+            Incluir geladeira (referência visual)
+          </label>
+          <p className="mt-1 text-xs text-brand-silver-600">
+            Mostra uma geladeira em tamanho real na parede, só como referência
+            pra planejar o espaço — não é um produto vendável, não entra no
+            carrinho. Você pode arrastá-la pra qualquer ponto do balcão.
+          </p>
         </div>
 
         <div>
