@@ -24,7 +24,8 @@ import { SummaryBar } from './components/SummaryBar';
 type DragData =
   | { type: 'catalog-module'; moduleId: number; moduleName: string; widthCm: number; heightCm: number }
   | { type: 'placed-module'; instanceId: string; moduleName: string; widthCm: number; heightCm: number }
-  | { type: 'sink' };
+  | { type: 'sink' }
+  | { type: 'fridge' };
 
 function App() {
   const step = useConfiguratorStore((s) => s.step);
@@ -35,6 +36,7 @@ function App() {
   const moveModule = useConfiguratorStore((s) => s.moveModule);
   const modules = useConfiguratorStore((s) => s.modules);
   const moveSink = useConfiguratorStore((s) => s.moveSink);
+  const moveFridge = useConfiguratorStore((s) => s.moveFridge);
   const setDragPreview = useConfiguratorStore((s) => s.setDragPreview);
   const autoAddedRef = useRef(false);
 
@@ -125,7 +127,7 @@ function App() {
     if (over.id !== WALL_DROPPABLE_ID) return null;
 
     const data = active.data.current as DragData | undefined;
-    if (!data || data.type === 'sink') return null;
+    if (!data || data.type === 'sink' || data.type === 'fridge') return null;
 
     const translated = active.rect.current.translated;
     if (!translated || !over.rect.width) return null;
@@ -177,12 +179,34 @@ function App() {
     return relativeX / scale;
   }
 
+  /** Calcula a posição X (cm) da geladeira se fosse solta agora -- mesma lógica de `computeSinkX` (só horizontal, referência visual). */
+  function computeFridgeX(event: DragMoveEvent | DragEndEvent): number | null {
+    const { active, over } = event;
+    if (!over || !room) return null;
+    if (over.id !== WALL_DROPPABLE_ID) return null;
+    const data = active.data.current as DragData | undefined;
+    if (!data || data.type !== 'fridge') return null;
+
+    const translated = active.rect.current.translated;
+    if (!translated || !over.rect.width) return null;
+
+    const scale = over.rect.width / room.widthCm;
+    const centerX = translated.left + translated.width / 2;
+    const relativeX = centerX - over.rect.left;
+    return relativeX / scale;
+  }
+
   /** Atualiza o indicador "fantasma" a cada movimento — dá o feedback em tempo real de onde o módulo vai encaixar. */
   function handleDragMove(event: DragMoveEvent) {
     const data = event.active.data.current as DragData | undefined;
     if (data?.type === 'sink') {
       const sinkX = computeSinkX(event);
       if (sinkX !== null) moveSink(sinkX);
+      return;
+    }
+    if (data?.type === 'fridge') {
+      const fridgeX = computeFridgeX(event);
+      if (fridgeX !== null) moveFridge(fridgeX);
       return;
     }
     const target = computeDropTarget(event);
@@ -197,6 +221,12 @@ function App() {
     if (data.type === 'sink') {
       const sinkX = computeSinkX(event);
       if (sinkX !== null) moveSink(sinkX);
+      return;
+    }
+
+    if (data.type === 'fridge') {
+      const fridgeX = computeFridgeX(event);
+      if (fridgeX !== null) moveFridge(fridgeX);
       return;
     }
 
