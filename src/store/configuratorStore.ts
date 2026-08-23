@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { CatalogModule } from '../types/catalog';
 import type { PlacedModule, RoomDimensions, SinkFixture, FridgeFixture } from '../types/composition';
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
-import { buildRenderModules, generateRender } from '../api/generateRender';
+import { buildCollageDataUrl, buildRenderModules, generateRender } from '../api/generateRender';
 import { resolvePositionCm, packedPositionCm, snapPositionCm } from '../utils/placement';
 import { getModuleBand, getBandYRange } from '../utils/bands';
 import { FRIDGE_WIDTH_CM } from '../utils/fridge';
@@ -142,15 +142,11 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     },
 
     setRoom: (room) => {
-          // Pia entra centralizada na bancada por padrão (a pessoa pode arrastar
-      // pra qualquer lado depois, ver `moveSink`).
-      const sink: SinkFixture | null =
+          const sink: SinkFixture | null =
               room.sinkWidthCm && room.sinkWidthCm > 0
               ? { widthCm: room.sinkWidthCm, offsetXCm: Math.max(0, (room.widthCm - room.sinkWidthCm) / 2) }
                 : null;
-          // Geladeira entra encostada na borda esquerda por padrão (a pessoa pode
-      // arrastar pra qualquer lado depois, ver `moveFridge`).
-      const fridge: FridgeFixture | null = room.includeFridge
+          const fridge: FridgeFixture | null = room.includeFridge
             ? { offsetXCm: Math.max(0, Math.min(room.widthCm - FRIDGE_WIDTH_CM, 0)) }
               : null;
           set({ room, step: 'build', sink, fridge });
@@ -174,22 +170,12 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                   widthCm: m.widthCm,
                   heightCm: m.heightCm,
           }));
-          // Módulo de parede ("superior") só pode ficar na faixa de cima, módulo
-      // de chão só na faixa de baixo — nunca cruza a linha da bancada (ver
-      // `utils/bands.ts`). Dentro da própria faixa continua livre em X e Y.
-      const band = getModuleBand(mod.name);
+          const band = getModuleBand(mod.name);
           const yBounds = getBandYRange(band, room, mod.heightCm);
           const packed = packedPositionCm(others, size, room, yBounds, band === 'base' ? 'bottom' : 'top');
-          // Sem ponto explícito -> primeiro canto livre da faixa (botão "+
-      // Adicionar", deep-link). Com ponto explícito (soltar arrastando) ->
-      // resolve pro ponto livre mais próximo de onde o dedo soltou, sem
-      // sobrepor ninguém e sem sair da faixa.
-      const resolvedRaw =
+          const resolvedRaw =
               position === undefined ? packed : resolvePositionCm(others, position, size, room, packed, yBounds);
-          // Imã de alinhamento: gruda nas bordas de módulos vizinhos (ou da
-      // parede) dentro de `SNAP_CM`, eliminando vãozinhos mesmo quando o
-      // ponto solto já estava "quase" alinhado.
-      const resolved = snapPositionCm(others, resolvedRaw, size, room, yBounds);
+          const resolved = snapPositionCm(others, resolvedRaw, size, room, yBounds);
 
       const placed: PlacedModule = {
               instanceId: `inst-${++instanceCounter}`,
@@ -323,6 +309,21 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
 
       set({ aiRender: { loading: true, imageDataUrl: null, error: null } });
           try {
+                  const collage = await buildCollageDataUrl({
+                            roomPreviewUrl: roomPhoto.previewUrl,
+                            roomWidthCm: room.widthCm,
+                            roomHeightCm: room.heightCm,
+                            finish,
+                            handle,
+                            modules: modules.map((m) => ({
+                                        moduleName: m.moduleName,
+                                        thumbnail: m.thumbnail,
+                                        widthCm: m.widthCm,
+                                        heightCm: m.heightCm,
+                                        offsetXCm: m.offsetXCm,
+                                        offsetYCm: m.offsetYCm,
+                            })),
+                  });
                   const result = await generateRender({
                             roomPhotoBase64: roomPhoto.base64,
                             roomPhotoMimeType: roomPhoto.mimeType,
@@ -331,6 +332,8 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                             finish,
                             handle,
                             modules: buildRenderModules(modules),
+                            collageBase64: collage?.base64,
+                            collageMimeType: collage?.mimeType,
                   });
                   set({
                             aiRender: {
