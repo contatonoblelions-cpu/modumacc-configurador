@@ -68,7 +68,7 @@ export function ModuleChip({ module }: Props) {
             aria-hidden="true"
             className="absolute inset-0"
             style={{
-              backgroundImage: 'linear-gradient(180deg, rgba(15,30,45,0) 45%, rgba(10,20,32,0.8) 100%)',
+              backgroundImage: 'linear-gradient(180deg, rgba(26,63,97,0) 40%, rgba(26,63,97,0.92) 100%)',
             }}
           />
         )}
