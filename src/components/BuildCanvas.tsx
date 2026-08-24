@@ -8,7 +8,7 @@ import { SinkFixture } from './SinkFixture';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
 import type { PlacedModule, SinkFixture as SinkFixtureData, FridgeFixture as FridgeFixtureData } from '../types/composition';
-import { COUNTERTOP_RATIO } from '../utils/bands';
+import { getCountertopRatio } from '../utils/bands';
 import { FRIDGE_WIDTH_CM, FRIDGE_HEIGHT_CM, FRIDGE_PHOTO } from '../utils/fridge';
 
 /**
@@ -24,13 +24,13 @@ import { FRIDGE_WIDTH_CM, FRIDGE_HEIGHT_CM, FRIDGE_PHOTO } from '../utils/fridge
  * arrasto da própria pia ela sobe pra `z-30`, pra ficar visível acima de
  * tudo enquanto está sendo posicionada.
  */
-function DraggableSink({ sink, scale, canvasHeight }: { sink: SinkFixtureData; scale: number; canvasHeight: number }) {
+function DraggableSink({ sink, scale, canvasHeight, counterRatio }: { sink: SinkFixtureData; scale: number; canvasHeight: number; counterRatio: number }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: 'sink',
     data: { type: 'sink' },
   });
   const sizePx = sink.widthCm * scale;
-  const topPx = canvasHeight * COUNTERTOP_RATIO - sizePx * 0.42;
+  const topPx = canvasHeight * counterRatio - sizePx * 0.42;
 
   return (
     <div
@@ -263,7 +263,7 @@ const ROTATE_STEP_DEG = 45;
  * Designer"): chanfro de topo+lateral via `IsoBevel` por cima do painel —
  * por isso o `overflow-hidden` que recorta a foto foi movido pro wrapper
  * INTERNO (`.relative.h-full...overflow-hidden` logo abaixo), deixando o
- * contêiner externo (que tem o `ref` do drag) com overflow visível só pra
+ * contâiner externo (que tem o `ref` do drag) com overflow visível só pra
  * essas duas tirinhas decorativas conseguirem "vazar" por cima/pela direita.
  *
  * Seleção com barra de ações flutuante (pedido do cliente, referência de um
@@ -342,7 +342,7 @@ function PlacedModuleBox({
           {/* Rótulo (nome + largura + preço) escondido por padrão, só aparece no hover/toque — mantém a parede limpa, igual a referência. */}
           <div
             className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end gap-0.5 px-1 pb-1 text-center opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100"
-            style={{ backgroundImage: 'linear-gradient(180deg, rgba(15,30,45,0) 55%, rgba(10,20,32,0.75) 100%)' }}
+            style={{ backgroundImage: 'linear-gradient(180deg, rgba(26,63,97,0) 50%, rgba(26,63,97,0.9) 100%)' }}
           >
             <span className="line-clamp-2 text-[10px] font-medium leading-tight text-white drop-shadow-sm md:text-[11px]">
               {m.moduleName}
@@ -353,16 +353,6 @@ function PlacedModuleBox({
           </div>
         </div>
       </div>
-      {/*
-        Barra de ações flutuante — só aparece com o módulo SELECIONADO (um
-        toque nele, ver `onClick` acima), flutuando logo ACIMA da caixa,
-        centralizada. "Girar" soma `ROTATE_STEP_DEG` graus a cada toque (dá a
-        volta completa em 8 toques) — só gira a foto/desenho por dentro, o
-        retângulo ocupado na parede (pra colisão/posicionamento) não muda.
-        `onPointerDown` com stopPropagation pra não brigar com o arrasto do
-        dnd-kit (que fica no wrapper interno) nem re-disparar o clique de
-        seleção do container.
-      */}
       {selected && (
         <div
           onClick={(e) => e.stopPropagation()}
@@ -390,16 +380,6 @@ function PlacedModuleBox({
   );
 }
 
-/**
- * Área de montagem: UM ÚNICO quadrante branco representando a parede
- * inteira (largura x altura do ambiente, à escala) — a pessoa está de
- * frente pra parede e decide livremente onde cada módulo entra, em
- * qualquer ponto, começando por onde quiser (canto, meio, em cima, embaixo,
- * do lado), sem nenhuma fileira ou categoria pré-definida. É o mesmo
- * princípio de um planejador de planta 2D: arrasta a peça e solta onde
- * quiser, só não pode sair do espaço nem ficar em cima de outra peça (ver
- * `utils/placement.ts`).
- */
 export function BuildCanvas() {
   const room = useConfiguratorStore((s) => s.room);
   const modules = useConfiguratorStore((s) => s.modules);
@@ -417,7 +397,6 @@ export function BuildCanvas() {
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(CANVAS_MAX_PX);
-  /** Qual módulo está selecionado (mostrando a barra de ações flutuante) — ver `PlacedModuleBox`. Só um por vez. */
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -434,19 +413,12 @@ export function BuildCanvas() {
   if (!room) return null;
 
   const scale = canvasWidth / room.widthCm;
-  // A altura do quadrante usa a MESMA escala da largura, pra não distorcer
-  // a proporção real do espaço — é literalmente "ver a parede de frente".
   const canvasHeight = Math.round(Math.min(CANVAS_MAX_H_PX, Math.max(CANVAS_MIN_H_PX, room.heightCm * scale)));
+  // Linha da bancada medida em cm reais do chão (92cm) -> proporção do quadrante.
+  const counterRatio = getCountertopRatio(room);
 
   return (
     <div className="order-1 flex flex-1 overflow-y-auto overflow-x-hidden p-3 md:order-none md:overflow-visible md:p-6">
-      {/*
-        Parede lateral esquerda — tira decorativa só no desktop (tem espaço
-        sobrando), dá o contexto de "ambiente" ao redor da parede principal,
-        igual o corte humanizado de referência. NÃO entra no mobile: lá o
-        espaço é curto e prioridade é o quadrante principal ficar o maior
-        possível pra facilitar o arrasto no toque.
-      */}
       <div
         aria-hidden="true"
         className="hidden shrink-0 self-stretch rounded-l-lg md:block"
@@ -472,41 +444,13 @@ export function BuildCanvas() {
         </p>
       )}
 
-      {/*
-        Réguas (topo + lateral) com as medidas reais que a pessoa configurou
-        na tela de entrada, na MESMA escala do quadriculado/dos módulos —
-        pedido do cliente pra sempre ter noção da escala real olhando pras
-        bordas, igual um desenho técnico.
-
-        IMPORTANTE (bug de mobile corrigido aqui): o `ref` de medição
-        (`wrapperRef`, usado pelo `ResizeObserver` que define `canvasWidth`)
-        fica na COLUNA que sobra depois da régua vertical -- não mais no
-        container inteiro. Antes ele media o espaço TOTAL e a régua ainda
-        tentava caber DENTRO desse mesmo espaço (com um `+28` chutado a
-        mais), o que sempre estourava a largura disponível em uns 28px e
-        deixava essa faixa cronicamente scrollável na horizontal. Num
-        celular isso vira uma área que "corre"/treme sozinha ao tocar pra
-        rolar a tela (o dedo mexe numa rolagem horizontal escondida em vez
-        de só rolar a página verticalmente). Com o `flex` cuidando do
-        tamanho (sem `maxWidth` chutado), a régua vertical e a coluna do
-        quadrante sempre somam exatamente o espaço disponível, nunca mais.
-      */}
       <div className="flex items-start">
         <RulerVertical heightCm={room.heightCm} scale={scale} />
         <div ref={wrapperRef} className="min-w-0 flex-1">
           <RulerHorizontal widthCm={room.widthCm} scale={scale} />
 
-      {/*
-        UM ÚNICO quadrante — a parede inteira, sem divisão nenhuma. O
-        droppable cobre o quadrante todo (`WALL_DROPPABLE_ID`); o ponto exato
-        (X, Y) de onde soltar é calculado em `App.tsx` a partir do retângulo
-        do drag.
-      */}
       <div
         ref={setNodeRef}
-        // Clique no FUNDO do quadrante (não em cima de um módulo — cada
-        // módulo dá `stopPropagation` no próprio clique) fecha a barra de
-        // ações flutuante, igual clicar fora de um menu.
         onClick={() => setSelectedInstanceId(null)}
         style={{
           width: canvasWidth,
@@ -515,13 +459,6 @@ export function BuildCanvas() {
         }}
         className="relative max-w-full overflow-hidden rounded-xl border border-brand-silver-200 md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
       >
-        {/*
-          Quadriculado igual escala real (10cm/50cm) por DENTRO do
-          quadrante inteiro — pedido do cliente: antes só existia do lado de
-          fora (fundo do app, `AppBackground.tsx`); agora ele serve de régua
-          visual embaixo dos módulos também, do começo ao fim do ambiente
-          (linhas finas a cada 10cm, mais fortes a cada 50cm).
-        */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
@@ -533,11 +470,6 @@ export function BuildCanvas() {
           }}
         />
 
-        {/*
-          Rodateto/moldura de gesso no topo — friso fino com sombra, igual
-          ao acabamento de forro na referência do cliente ("Corte 01 |
-          Humanizado"). 100% decorativo.
-        */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0"
@@ -548,14 +480,6 @@ export function BuildCanvas() {
           }}
         />
 
-        {/*
-          "Piso" decorativo — faixa de madeira no rodapé do quadrante, só
-          pra dar contexto de parede+chão de cozinha de verdade (pedido do
-          cliente, referência tipo planta humanizada do Revit), em vez do
-          retângulo branco vazio de antes. 100% visual via CSS (sem imagem),
-          não mexe na posição livre dos módulos — o cliente escolheu manter
-          o arrasto livre em X/Y, só queria o CONTEXTO visual.
-        */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 bottom-0"
@@ -567,12 +491,6 @@ export function BuildCanvas() {
           }}
         />
 
-        {/*
-          Sombra do rodapé/rodabase dos módulos de chão — friso escuro bem
-          fino logo acima do piso, dando a profundidade do "recuo" da base
-          dos armários (igual ao sombreado escuro na base dos módulos verdes
-          da referência). 100% decorativo.
-        */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0"
@@ -583,21 +501,11 @@ export function BuildCanvas() {
           }}
         />
 
-        {/*
-          Backsplash + bancada — a linha divisória entre a faixa de módulos
-          de PAREDE (em cima) e a faixa de módulos de CHÃO (embaixo, ver
-          `utils/bands.ts` > `COUNTERTOP_RATIO`), desenhada como um corte
-          humanizado de verdade: um friso de azulejo sutil logo acima da
-          bancada, e a própria bancada como uma faixa mais escura com
-          sombra, igual um tampo de granito/quartzo visto de frente. 100%
-          decorativo — não interfere na posição livre dos módulos, só dá o
-          contexto visual da referência que o cliente mandou.
-        */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0"
           style={{
-            top: `${Math.max(0, COUNTERTOP_RATIO * 100 - 10.6)}%`,
+            top: `${Math.max(0, counterRatio * 100 - 10.6)}%`,
             height: '0.6%',
             backgroundImage: 'linear-gradient(180deg, rgba(255,214,140,0.55) 0%, rgba(255,214,140,0) 100%)',
           }}
@@ -606,7 +514,7 @@ export function BuildCanvas() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0"
           style={{
-            top: `${Math.max(0, COUNTERTOP_RATIO * 100 - 10)}%`,
+            top: `${Math.max(0, counterRatio * 100 - 10)}%`,
             height: '10%',
             backgroundImage:
               'repeating-linear-gradient(90deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px), repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px)',
@@ -617,7 +525,7 @@ export function BuildCanvas() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0"
           style={{
-            top: `${COUNTERTOP_RATIO * 100}%`,
+            top: `${counterRatio * 100}%`,
             height: '3%',
             backgroundImage: 'linear-gradient(180deg, #4a5a63 0%, #33414a 100%)',
             boxShadow: '0 2px 4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15)',
@@ -649,13 +557,6 @@ export function BuildCanvas() {
           />
         ))}
 
-        {/*
-          Indicador "fantasma" — mostra ENQUANTO ainda está arrastando (antes
-          de soltar) exatamente onde o módulo vai encaixar (X e Y), pra dar a
-          sensação de desenhar a parede ao vivo em vez de só ver o resultado
-          depois de soltar (ver `App.tsx` > `handleDragMove` e `dragPreview`
-          na store).
-        */}
         {dragPreview && (
           <>
             <div
@@ -676,14 +577,13 @@ export function BuildCanvas() {
           </>
         )}
 
-        {sink && <DraggableSink sink={sink} scale={scale} canvasHeight={canvasHeight} />}
+        {sink && <DraggableSink sink={sink} scale={scale} canvasHeight={canvasHeight} counterRatio={counterRatio} />}
         {fridge && <DraggableFridge fridge={fridge} scale={scale} canvasHeight={canvasHeight} />}
       </div>
         </div>
       </div>
       </div>
 
-      {/* Parede lateral direita — mesma ideia da esquerda, espelhada. */}
       <div
         aria-hidden="true"
         className="hidden shrink-0 self-stretch rounded-r-lg md:block"
