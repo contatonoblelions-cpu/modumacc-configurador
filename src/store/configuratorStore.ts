@@ -5,7 +5,7 @@ import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { buildCollageDataUrl, buildRenderModules, generateRender } from '../api/generateRender';
 import { resolvePositionCm, packedPositionCm, snapPositionCm } from '../utils/placement';
 import { getModuleBand, getBandYRange } from '../utils/bands';
-import { FRIDGE_WIDTH_CM } from '../utils/fridge';
+import { FRIDGE_WIDTH_CM, FRIDGE_HEIGHT_CM } from '../utils/fridge';
 
 type Step = 'room' | 'build' | 'review';
 
@@ -170,6 +170,18 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                   widthCm: m.widthCm,
                   heightCm: m.heightCm,
           }));
+          // A geladeira é um obstáculo: nenhum módulo (nem de base nem aéreo)
+          // pode ficar por cima dela (ver print do cliente). Ela ocupa a
+          // coluna inteira, do chão até a altura real da geladeira.
+          const fridge = get().fridge;
+          if (fridge) {
+                  others.push({
+                            x: fridge.offsetXCm,
+                            y: Math.max(0, room.heightCm - FRIDGE_HEIGHT_CM),
+                            widthCm: FRIDGE_WIDTH_CM,
+                            heightCm: FRIDGE_HEIGHT_CM,
+                  });
+          }
           const band = getModuleBand(mod.name);
           const yBounds = getBandYRange(band, room, mod.heightCm);
           const packed = packedPositionCm(others, size, room, yBounds, band === 'base' ? 'bottom' : 'top');
@@ -205,6 +217,15 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           const others = modules
             .filter((m) => m.instanceId !== instanceId)
             .map((m) => ({ x: m.offsetXCm, y: m.offsetYCm, widthCm: m.widthCm, heightCm: m.heightCm }));
+          const fridgeObstacle = get().fridge;
+          if (fridgeObstacle) {
+                  others.push({
+                            x: fridgeObstacle.offsetXCm,
+                            y: Math.max(0, room.heightCm - FRIDGE_HEIGHT_CM),
+                            widthCm: FRIDGE_WIDTH_CM,
+                            heightCm: FRIDGE_HEIGHT_CM,
+                  });
+          }
           const band = getModuleBand(item.moduleName);
           const yBounds = getBandYRange(band, room, item.heightCm);
           const resolvedRaw = resolvePositionCm(
