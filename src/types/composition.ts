@@ -11,6 +11,12 @@ export interface RoomDimensions {
   fridgeWidthCm?: number;
   /** Altura da geladeira (cm), informada quando `includeFridge`. */
   fridgeHeightCm?: number;
+    /** Se o cliente marcou "incluir fogão" na tela de medidas. */
+  includeStove?: boolean;
+  /** Largura do fogão (cm), informada quando `includeStove`. */
+  stoveWidthCm?: number;
+  /** Altura do fogão (cm), informada quando `includeStove`. */
+  stoveHeightCm?: number;
 }
 
 export interface SinkFixture {
@@ -29,6 +35,13 @@ export interface FridgeFixture {
     /** Largura real da geladeira (cm). */
   widthCm: number;
     /** Altura real da geladeira (cm). */
+  heightCm: number;
+}
+
+/** Fogão -- elemento SÓ VISUAL/referência (igual `FridgeFixture`). */
+export interface StoveFixture {
+  offsetXCm: number;
+  widthCm: number;
   heightCm: number;
 }
 
