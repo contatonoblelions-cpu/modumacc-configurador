@@ -327,7 +327,7 @@ function PlacedModuleBox({
           className="relative h-full w-full touch-none cursor-grab transition-transform active:cursor-grabbing"
         >
           {hasPhoto ? (
-                        <ModulePhoto name={m.moduleName} finish={finish} handle={handle} className="absolute inset-0 h-full w-full" />
+                        <ModulePhoto name={m.moduleName} finish={finish} handle={handle} objectFit="cover" className="absolute inset-0 h-full w-full" />
           ) : (
             <ModuleSchematic
               name={m.moduleName}

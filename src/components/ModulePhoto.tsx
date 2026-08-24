@@ -5,6 +5,8 @@ interface Props {
           finish?: string | null;
           handle?: string | null;
           className?: string;
+          /** Como a foto preenche a caixa. `fill` (padrao) estica; `cover` mantem proporcao e recorta o minimo -- usado nos modulos colocados pra nao achatar o puxador. */
+          objectFit?: 'fill' | 'cover';
 }
 
 /**
@@ -25,13 +27,13 @@ interface Props {
  * Devolve `null` quando nao existe imagem pra esse formato -- quem chama
  * cai no `ModuleSchematic.tsx` nesse caso.
  */
-export function ModulePhoto({ name, finish, handle, className }: Props) {
+export function ModulePhoto({ name, finish, handle, className, objectFit = 'fill' }: Props) {
           const photoUrl = getModulePhoto(name, finish, handle);
           if (!photoUrl) return null;
 
   return (
               <div className={`relative overflow-hidden ${className ?? ''}`}>
-                            <img src={photoUrl} alt={name} className="h-full w-full object-fill" />
+                            <img src={photoUrl} alt={name} className={`h-full w-full ${objectFit === 'cover' ? 'object-cover' : 'object-fill'}`} />
               </div>
             );
 }

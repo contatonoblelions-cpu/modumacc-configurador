@@ -1,6 +1,7 @@
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { ModuleCard } from './ModuleCard';
 import { ModuleChip } from './ModuleChip';
+import { FinishHandleSelector } from './FinishHandleSelector';
 
 /**
  * Painel com os módulos disponíveis da linha Cozinha, vindos da Store API.
@@ -49,6 +50,9 @@ export function ModulePanel() {
           ‹ deslize a faixa para o lado para ver mais ›
         </p>
       )}
+
+      {/* Seletor de cor + puxador em "bolinhas", logo abaixo dos módulos (pedido do cliente, padrão das lojas de roupa). */}
+      <FinishHandleSelector />
     </aside>
   );
 }
