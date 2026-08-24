@@ -17,6 +17,9 @@ export function RoomSizeForm() {
   const [includeFridge, setIncludeFridge] = useState(false);
   const [fridgeWidth, setFridgeWidth] = useState('');
   const [fridgeHeight, setFridgeHeight] = useState('');
+  const [includeStove, setIncludeStove] = useState(false);
+  const [stoveWidth, setStoveWidth] = useState('');
+  const [stoveHeight, setStoveHeight] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [processingPhoto, setProcessingPhoto] = useState(false);
@@ -85,8 +88,36 @@ export function RoomSizeForm() {
         fridgeHeightCm = fh;
       }
     }
+    let stoveWidthCm: number | undefined;
+    let stoveHeightCm: number | undefined;
+    if (includeStove) {
+      if (stoveWidth.trim() !== '') {
+        const sw = parseFloat(stoveWidth.replace(',', '.'));
+        if (!sw || sw <= 0) {
+          setError('Informe uma largura de fogão válida, em centímetros.');
+          return;
+        }
+        if (sw > widthCm) {
+          setError('A largura do fogão não pode ser maior que a largura do espaço.');
+          return;
+        }
+        stoveWidthCm = sw;
+      }
+      if (stoveHeight.trim() !== '') {
+        const sh = parseFloat(stoveHeight.replace(',', '.'));
+        if (!sh || sh <= 0) {
+          setError('Informe uma altura de fogão válida, em centímetros.');
+          return;
+        }
+        if (sh > heightCm) {
+          setError('A altura do fogão não pode ser maior que a altura do espaço.');
+          return;
+        }
+        stoveHeightCm = sh;
+      }
+    }
     setError(null);
-    setRoom({ widthCm, heightCm, sinkWidthCm, includeFridge, fridgeWidthCm, fridgeHeightCm });
+    setRoom({ widthCm, heightCm, sinkWidthCm, includeFridge, fridgeWidthCm, fridgeHeightCm, includeStove, stoveWidthCm, stoveHeightCm });
   }
 
   return (
@@ -192,6 +223,53 @@ export function RoomSizeForm() {
         </div>
 
         <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-brand-navy-800">
+            <input
+              type="checkbox"
+              checked={includeStove}
+              onChange={(e) => setIncludeStove(e.target.checked)}
+              className="h-4 w-4 rounded border-brand-silver-400 text-brand-navy-800 focus:ring-brand-navy-700"
+            />
+            Incluir fogão (referência visual)
+          </label>
+          <p className="mt-1 text-xs text-brand-silver-600">
+            Mostra um fogão em tamanho real na parede, só como referência —
+            não é um produto vendável, não entra no carrinho. Você pode
+            arrastá-lo pra qualquer ponto do balcão. Padrão: 4 bocas (52 x 90cm).
+          </p>
+          {includeStove && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-brand-navy-800">
+                  Largura do fogão (cm)
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={stoveWidth}
+                  onChange={(e) => setStoveWidth(e.target.value)}
+                  placeholder="Ex: 52 (4b) · 76 (5/6b)"
+                  className="w-full rounded-lg border border-brand-silver-400 px-3 py-2 text-sm focus:border-brand-navy-700 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-brand-navy-800">
+                  Altura do fogão (cm)
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={stoveHeight}
+                  onChange={(e) => setStoveHeight(e.target.value)}
+                  placeholder="Ex: 90"
+                  className="w-full rounded-lg border border-brand-silver-400 px-3 py-2 text-sm focus:border-brand-navy-700 focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div>
           <label className="mb-1 block text-sm font-medium text-brand-navy-800">
             Foto do ambiente (opcional)
           </label>
@@ -231,8 +309,7 @@ export function RoomSizeForm() {
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
-          className="w-full rounded-lg bg-brand-navy-800 px-4 py-3 font-medium text-white transition hover:bg-brand-navy-900"
-        >
+          className="w-full rounded-lg bg-brand-navy-800 px-4 py-3 font-medium text-white transition hover:bg-brand-navy-900">
           Começar a montar
         </button>
       </form>
