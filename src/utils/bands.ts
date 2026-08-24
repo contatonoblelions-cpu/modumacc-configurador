@@ -14,6 +14,24 @@ export type ModuleBand = 'superior' | 'base';
 export const COUNTERTOP_RATIO = 0.55;
 
 /**
+ * Altura REAL da bancada a partir do chão, em cm (padrão de cozinha ≈ 92cm).
+ * A linha da bancada passa a ser medida em cm do chão (e não numa proporção
+ * fixa), pra a pia e os armários ficarem na altura real. `COUNTERTOP_RATIO`
+ * acima fica só como fallback caso o ambiente seja mais baixo que a bancada.
+ */
+export const COUNTERTOP_HEIGHT_CM = 92;
+
+/**
+ * Proporção (de cima pra baixo) onde fica a linha da bancada para um dado
+ * ambiente, derivada de `COUNTERTOP_HEIGHT_CM` (92cm do chão). Ex.: num
+ * ambiente de 240cm, 92cm do chão = 148cm do topo = 0,617.
+ */
+export function getCountertopRatio(room: RoomDimensions): number {
+  if (!room.heightCm || room.heightCm <= COUNTERTOP_HEIGHT_CM) return COUNTERTOP_RATIO;
+  return (room.heightCm - COUNTERTOP_HEIGHT_CM) / room.heightCm;
+}
+
+/**
  * Deriva a FAIXA (parede/"superior" ou chão/"base") a partir do nome do
  * produto — mesma lógica de `isSuperior` em `utils/modulePhotos.ts`.
  */
@@ -38,7 +56,10 @@ export function getBandYRange(
   room: RoomDimensions,
   moduleHeightCm: number,
 ): { minY: number; maxY: number } {
-  const splitY = room.heightCm * COUNTERTOP_RATIO;
+  const splitY =
+    room.heightCm > COUNTERTOP_HEIGHT_CM
+      ? room.heightCm - COUNTERTOP_HEIGHT_CM
+      : room.heightCm * COUNTERTOP_RATIO;
   const maxPossibleY = Math.max(0, room.heightCm - moduleHeightCm);
 
   if (band === 'superior') {
@@ -50,4 +71,3 @@ export function getBandYRange(
   const maxY = Math.max(minY, maxPossibleY);
   return { minY, maxY };
 }
-
