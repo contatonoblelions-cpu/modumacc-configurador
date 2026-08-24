@@ -18,13 +18,12 @@
   --color-brand-silver-200: #DCE3E4;
   --color-brand-bg: #F5F7F7;
   /**
-   * Dourado/bronze — usado só no botão "Visualizar em 3D" (ver
-   * AiVisualization.tsx), pra ele se destacar visualmente dos botões navy
-   * padrão (Próximo passo / Adicionar ao carrinho) como um recurso especial,
-   * não mais um botão secundário igual aos outros.
+   * Antes dourado/bronze; agora azul da marca Modumacc — o cliente pediu que
+   * TODOS os botões usem o azul (inclusive o "Visualizar em 3D"). Mantido como
+   * token "accent" só pra não quebrar as referências existentes.
    */
-  --color-brand-accent-700: #A9752E;
-  --color-brand-accent-800: #8F6224;
+  --color-brand-accent-700: #1A3F61;
+  --color-brand-accent-800: #122A41;
 }
 
 html, body, #root {
