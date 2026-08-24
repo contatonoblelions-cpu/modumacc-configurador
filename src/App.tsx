@@ -18,7 +18,6 @@ import { Header } from './components/Header';
 import { RoomSizeForm } from './components/RoomSizeForm';
 import { ModulePanel } from './components/ModulePanel';
 import { BuildCanvas } from './components/BuildCanvas';
-import { FinishHandleSelector } from './components/FinishHandleSelector';
 import { SummaryBar } from './components/SummaryBar';
 
 type DragData =
@@ -142,18 +141,10 @@ function App() {
     const rawX = relativeX / scale - widthCm / 2;
     const rawY = relativeY / scale - heightCm / 2;
 
-    // Módulo de parede não pode passar da bancada pra baixo, módulo de chão
-    // não pode subir acima dela — mesma faixa aplicada de verdade na store
-    // (ver `addModule`/`moveModule`), aqui só pra o indicador "fantasma" já
-    // mostrar o lugar certo em vez de "pular" depois de soltar.
     const band = getModuleBand(data.moduleName);
     const { minY, maxY } = getBandYRange(band, room, heightCm);
     const y = Math.min(maxY, Math.max(minY, rawY));
 
-    // Aplica o mesmo imã de alinhamento (ver `snapPositionCm`) no indicador
-    // fantasma, contra os módulos já colocados (exceto o próprio, se for um
-    // reposicionamento) -- assim o "fantasma" já mostra grudado na borda
-    // antes mesmo de soltar, sem surpresa depois do drop.
     const others = modules
       .filter((m) => !(data.type === 'placed-module' && m.instanceId === data.instanceId))
       .map((m) => ({ x: m.offsetXCm, y: m.offsetYCm, widthCm: m.widthCm, heightCm: m.heightCm }));
@@ -269,28 +260,12 @@ function App() {
       <AppBackground />
       <div className="flex h-dvh flex-col">
         <Header />
-        <FinishHandleSelector />
-        {/*
-          No mobile a ordem visual é invertida (área de montagem fixa em
-          cima, faixa de módulos rolável embaixo — layout "estilo editor de
-          vídeo", ver BuildCanvas.tsx/ModulePanel.tsx) via `order`, sem mudar
-          a ordem real no DOM nem o layout desktop (`md:order-none` volta pra
-          ordem de código: painel à esquerda, parede à direita).
-        */}
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
           {step === 'build' && <ModulePanel />}
           <BuildCanvas />
         </div>
         <SummaryBar />
       </div>
-
-      {/*
-        Não usamos `DragOverlay` com preview do módulo aqui: o feedback em
-        tempo real é o indicador "fantasma" desenhado dentro do próprio
-        quadrante (`BuildCanvas.tsx`), que já mostra exatamente onde e do
-        tamanho que o módulo vai encaixar — muito mais direto que um card
-        flutuante genérico seguindo o dedo.
-      */}
     </DndContext>
   );
 }
