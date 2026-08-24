@@ -40,14 +40,14 @@ export function SummaryBar() {
   }
 
   return (
-    <div className="flex flex-col gap-2 border-t border-brand-silver-200/70 bg-white/80 px-4 py-2.5 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-6 sm:py-4">
+    <div className="flex flex-col gap-1.5 border-t border-brand-silver-200/70 bg-white/80 px-4 py-2 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-6 sm:py-4">
       <div className="flex items-center justify-between gap-2 md:block">
         <div>
           <p className="text-xs text-brand-silver-600">
             {modules.length} {modules.length === 1 ? 'módulo' : 'módulos'}
             {resolving && ' · atualizando preços...'}
           </p>
-          <p className="text-xl font-semibold text-brand-navy-900">{formatBRL(total)}</p>
+          <p className="text-lg font-semibold text-brand-navy-900 sm:text-xl">{formatBRL(total)}</p>
           {room && step !== 'room' && (
             <p className="text-[11px] text-brand-silver-500 md:hidden">
               {formatMeters(usedCmTotal)} de {formatMeters(room.widthCm)} ocupados
@@ -73,7 +73,7 @@ export function SummaryBar() {
         </svg>
       </div>
       {step === 'build' ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex flex-row gap-2 sm:flex-row sm:items-center sm:gap-3">
           {/*
             Botão "Visualizar em 3D" já aparece aqui, durante a montagem —
             não só depois de "Próximo passo" — porque o pedido do cliente foi
@@ -84,18 +84,18 @@ export function SummaryBar() {
           <button
             onClick={goToReview}
             disabled={!canProceed}
-            className="w-full rounded-lg bg-brand-navy-800 px-6 py-3 font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:w-auto"
+            className="flex-1 rounded-lg bg-brand-navy-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:flex-none sm:px-6 sm:py-3 sm:text-base"
           >
             Próximo passo →
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex flex-row gap-2 sm:flex-row sm:items-center sm:gap-3">
           <AiVisualization />
           <button
             onClick={handleFinish}
             disabled={!canFinish || redirecting}
-            className="w-full rounded-lg bg-brand-navy-800 px-6 py-3 font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:w-auto"
+            className="flex-1 rounded-lg bg-brand-navy-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:flex-none sm:px-6 sm:py-3 sm:text-base"
           >
             {redirecting ? 'Enviando pro carrinho...' : 'Adicionar tudo ao carrinho'}
           </button>

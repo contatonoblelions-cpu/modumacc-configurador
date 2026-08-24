@@ -52,7 +52,7 @@ export function AiVisualization() {
             ? 'Envie uma foto do ambiente na tela de medidas pra usar essa função'
             : undefined
         }
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-accent-700 px-4 py-3 font-medium text-white shadow-sm transition hover:bg-brand-accent-800 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:w-auto"
+        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-accent-700 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-accent-800 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:flex-none sm:px-4 sm:py-3 sm:text-base"
       >
         <svg
           viewBox="0 0 24 24"

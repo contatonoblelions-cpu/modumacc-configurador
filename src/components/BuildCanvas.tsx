@@ -395,7 +395,8 @@ export function BuildCanvas() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(CANVAS_MAX_PX);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
-  const [viewportH, setViewportH] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
+  const outerRef = useRef<HTMLDivElement>(null);
+  const [availH, setAvailH] = useState(420);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -408,12 +409,19 @@ export function BuildCanvas() {
     return () => observer.disconnect();
   }, []);
 
-  // Altura da viewport (pra no celular a montagem crescer pela ALTURA e tomar
-  // mais da metade da tela, ver `scale`/`canvasHeight` abaixo).
+  // Mede a ALTURA realmente disponível pra montagem (o espaço que sobra
+  // depois do painel de módulos e da barra de botões, ambos fixos). No
+  // celular a montagem preenche exatamente esse espaço (ver `scale` abaixo),
+  // ficando sempre a maior parte da tela sem depender de chutes de vh.
   useEffect(() => {
-    const onResize = () => setViewportH(window.innerHeight);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const el = outerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h) setAvailH(h);
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
   }, []);
 
   if (!room) return null;
@@ -422,10 +430,11 @@ export function BuildCanvas() {
   const widthScale = canvasWidth / room.widthCm;
   // No celular (coluna estreita) a cozinha larga e baixa ficava numa faixa
   // curta, tomando pouca tela. Aqui a montagem passa a crescer pela ALTURA
-  // (~55% da tela) e, se ficar mais larga que o celular, rola pro lado.
+  // (até preencher o espaço disponível) e, se ficar mais larga que o celular, rola pro lado.
   const isMobile = canvasWidth < 700;
+  const targetBoxH = Math.max(180, availH - 64);
   const scale = isMobile
-    ? Math.max(widthScale, Math.min((0.55 * viewportH) / room.heightCm, widthScale * 2.6))
+    ? Math.max(widthScale, Math.min(targetBoxH / room.heightCm, widthScale * 3))
     : widthScale;
   const canvasHeight = isMobile
     ? Math.round(room.heightCm * scale)
@@ -434,7 +443,7 @@ export function BuildCanvas() {
   const counterRatio = getCountertopRatio(room);
 
   return (
-    <div className="order-1 flex flex-1 overflow-y-auto overflow-x-hidden p-3 md:order-none md:overflow-visible md:p-6">
+    <div ref={outerRef} className="order-1 flex flex-1 overflow-y-auto overflow-x-hidden p-3 md:order-none md:overflow-visible md:p-6">
       <div
         aria-hidden="true"
         className="hidden shrink-0 self-stretch rounded-l-lg md:block"
