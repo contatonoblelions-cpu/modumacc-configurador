@@ -40,14 +40,14 @@ export function SummaryBar() {
   }
 
   return (
-    <div className="flex flex-col gap-1.5 border-t border-brand-silver-200/70 bg-white/80 px-4 py-2 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-6 sm:py-4">
+    <div className="flex flex-col gap-1 border-t border-brand-silver-200/70 bg-white/80 px-3 py-1 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-6 sm:py-4">
       <div className="flex items-center justify-between gap-2 md:block">
         <div>
           <p className="text-xs text-brand-silver-600">
             {modules.length} {modules.length === 1 ? 'módulo' : 'módulos'}
             {resolving && ' · atualizando preços...'}
           </p>
-          <p className="text-lg font-semibold text-brand-navy-900 sm:text-xl">{formatBRL(total)}</p>
+          <p className="text-base font-semibold text-brand-navy-900 sm:text-xl">{formatBRL(total)}</p>
           {room && step !== 'room' && (
             <p className="text-[11px] text-brand-silver-500 md:hidden">
               {formatMeters(usedCmTotal)} de {formatMeters(room.widthCm)} ocupados
@@ -57,7 +57,7 @@ export function SummaryBar() {
         {/* Ícone de carrinho, só decorativo, só no mobile — reforça o botão abaixo. */}
         <svg
           viewBox="0 0 24 24"
-          className="h-6 w-6 shrink-0 text-brand-navy-700 md:hidden"
+          className="h-5 w-5 shrink-0 text-brand-navy-700 md:hidden"
           fill="none"
           stroke="currentColor"
           strokeWidth="1.8"
@@ -84,7 +84,7 @@ export function SummaryBar() {
           <button
             onClick={goToReview}
             disabled={!canProceed}
-            className="flex-1 rounded-lg bg-brand-navy-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:flex-none sm:px-6 sm:py-3 sm:text-base"
+            className="flex-1 rounded-lg bg-brand-navy-800 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-navy-900 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:flex-none sm:px-6 sm:py-3 sm:text-base"
           >
             Próximo passo →
           </button>

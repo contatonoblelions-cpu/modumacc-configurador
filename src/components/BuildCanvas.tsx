@@ -443,7 +443,7 @@ export function BuildCanvas() {
   const counterRatio = getCountertopRatio(room);
 
   return (
-    <div ref={outerRef} className="order-1 flex h-[55vh] shrink-0 overflow-hidden p-3 md:order-none md:h-auto md:flex-1 md:overflow-visible md:p-6">
+    <div ref={outerRef} className="order-1 flex h-[48vh] shrink-0 overflow-hidden p-3 md:order-none md:h-auto md:flex-1 md:overflow-visible md:p-6">
       <div
         aria-hidden="true"
         className="hidden shrink-0 self-stretch rounded-l-lg md:block"
