@@ -207,8 +207,21 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           const resolvedRaw =
               position === undefined ? packed : resolvePositionCm(others, position, size, room, packed, yBounds);
           const resolved = snapPositionCm(others, resolvedRaw, size, room, yBounds);
-          const isMicro = /microondas/i.test(mod.name.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
-          const finalYAdd = band === 'superior' && !isMicro ? yBounds.minY : resolved.y;
+          const normName = (n: string) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const isMicro = /microondas/.test(normName(mod.name));
+          const isBasc = /basculante/.test(normName(mod.name));
+          let finalYAdd = resolved.y;
+          if (band === 'superior' && !isMicro && !isBasc) {
+            const TOL = 4;
+            for (const n of get().modules) {
+              const nn = normName(n.moduleName);
+              if (/microondas/.test(nn) || /basculante/.test(nn)) continue;
+              if (getModuleBand(n.moduleName) !== 'superior') continue;
+              const touchR = Math.abs(n.offsetXCm + n.widthCm - resolved.x) <= TOL;
+              const touchL = Math.abs(resolved.x + widthCm - n.offsetXCm) <= TOL;
+              if (touchR || touchL) { finalYAdd = n.offsetYCm; break; }
+            }
+          }
 
       const placed: PlacedModule = {
               instanceId: `inst-${++instanceCounter}`,
@@ -273,8 +286,22 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                   room,
                   yBounds,
                 );
-          const isMicroMove = /microondas/i.test(item.moduleName.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
-          const finalYMove = band === 'superior' && !isMicroMove ? yBounds.minY : resolved.y;
+          const normNameMv = (n: string) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const isMicroMove = /microondas/.test(normNameMv(item.moduleName));
+          const isBascMove = /basculante/.test(normNameMv(item.moduleName));
+          let finalYMove = resolved.y;
+          if (band === 'superior' && !isMicroMove && !isBascMove) {
+            const TOL = 4;
+            for (const n of modules) {
+              if (n.instanceId === instanceId) continue;
+              const nn = normNameMv(n.moduleName);
+              if (/microondas/.test(nn) || /basculante/.test(nn)) continue;
+              if (getModuleBand(n.moduleName) !== 'superior') continue;
+              const touchR = Math.abs(n.offsetXCm + n.widthCm - resolved.x) <= TOL;
+              const touchL = Math.abs(resolved.x + item.widthCm - n.offsetXCm) <= TOL;
+              if (touchR || touchL) { finalYMove = n.offsetYCm; break; }
+            }
+          }
           set({
                   modules: modules.map((m) =>
                             m.instanceId === instanceId ? { ...m, offsetXCm: resolved.x, offsetYCm: finalYMove } : m,
