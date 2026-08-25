@@ -210,16 +210,24 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           const normName = (n: string) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
           const isMicro = /microondas/.test(normName(mod.name));
           const isBasc = /basculante/.test(normName(mod.name));
+          let finalXAdd = resolved.x;
           let finalYAdd = resolved.y;
           if (band === 'superior' && !isMicro && !isBasc) {
-            const TOL = 4;
+            const REACH = 20;
+            let best: { x: number; y: number } | null = null;
+            let bestGap = REACH;
             for (const n of get().modules) {
               const nn = normName(n.moduleName);
               if (/microondas/.test(nn) || /basculante/.test(nn)) continue;
               if (getModuleBand(n.moduleName) !== 'superior') continue;
-              const touchR = Math.abs(n.offsetXCm + n.widthCm - resolved.x) <= TOL;
-              const touchL = Math.abs(resolved.x + widthCm - n.offsetXCm) <= TOL;
-              if (touchR || touchL) { finalYAdd = n.offsetYCm; break; }
+              const gapR = Math.abs(resolved.x - (n.offsetXCm + n.widthCm));
+              const gapL = Math.abs(resolved.x + widthCm - n.offsetXCm);
+              if (gapR <= bestGap) { bestGap = gapR; best = { x: n.offsetXCm + n.widthCm, y: n.offsetYCm }; }
+              if (gapL <= bestGap) { bestGap = gapL; best = { x: n.offsetXCm - widthCm, y: n.offsetYCm }; }
+            }
+            if (best) {
+              finalXAdd = Math.min(Math.max(0, best.x), Math.max(0, room.widthCm - widthCm));
+              finalYAdd = best.y;
             }
           }
 
@@ -231,7 +239,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
               widthCm,
               heightCm: mod.heightCm,
               basePriceCents: mod.minPriceCents,
-              offsetXCm: resolved.x,
+              offsetXCm: finalXAdd,
               offsetYCm: finalYAdd,
               rotationDeg: 0,
       };
@@ -289,22 +297,30 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           const normNameMv = (n: string) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
           const isMicroMove = /microondas/.test(normNameMv(item.moduleName));
           const isBascMove = /basculante/.test(normNameMv(item.moduleName));
+          let finalXMove = resolved.x;
           let finalYMove = resolved.y;
           if (band === 'superior' && !isMicroMove && !isBascMove) {
-            const TOL = 4;
+            const REACH = 20;
+            let best: { x: number; y: number } | null = null;
+            let bestGap = REACH;
             for (const n of modules) {
               if (n.instanceId === instanceId) continue;
               const nn = normNameMv(n.moduleName);
               if (/microondas/.test(nn) || /basculante/.test(nn)) continue;
               if (getModuleBand(n.moduleName) !== 'superior') continue;
-              const touchR = Math.abs(n.offsetXCm + n.widthCm - resolved.x) <= TOL;
-              const touchL = Math.abs(resolved.x + item.widthCm - n.offsetXCm) <= TOL;
-              if (touchR || touchL) { finalYMove = n.offsetYCm; break; }
+              const gapR = Math.abs(resolved.x - (n.offsetXCm + n.widthCm));
+              const gapL = Math.abs(resolved.x + item.widthCm - n.offsetXCm);
+              if (gapR <= bestGap) { bestGap = gapR; best = { x: n.offsetXCm + n.widthCm, y: n.offsetYCm }; }
+              if (gapL <= bestGap) { bestGap = gapL; best = { x: n.offsetXCm - item.widthCm, y: n.offsetYCm }; }
+            }
+            if (best) {
+              finalXMove = Math.min(Math.max(0, best.x), Math.max(0, room.widthCm - item.widthCm));
+              finalYMove = best.y;
             }
           }
           set({
                   modules: modules.map((m) =>
-                            m.instanceId === instanceId ? { ...m, offsetXCm: resolved.x, offsetYCm: finalYMove } : m,
+                            m.instanceId === instanceId ? { ...m, offsetXCm: finalXMove, offsetYCm: finalYMove } : m,
                                              ),
           });
     },
