@@ -6,94 +6,66 @@ import type { PlacedModule } from '../types/composition';
  *
  * !! LEIA ANTES DE MEXER AQUI — decisão técnica não-óbvia, documentada também no README !!
  *
- * O WooCommerce tem uma URL nativa de "add to cart" (`?add-to-cart=<id>&variation_id=...`)
- * que não exige login nem nonce — é pensada pra links simples tipo "compre agora".
- * O problema: essa URL só adiciona UM produto por requisição. Nossa composição tem
- * vários módulos, e o WooCommerce núcleo não tem uma URL nativa pra "adicionar N
- * itens de uma vez" sem plugin.
+ * PROBLEMA que essa abordagem resolve (descoberto testando ao vivo em 2026-08-25):
+ * a versão antiga adicionava cada módulo carregando a URL nativa de add-to-cart do
+ * WooCommerce dentro de <iframe> escondidos. Isso FALHA quando o app está hospedado
+ * num domínio diferente do site (aqui: modumacc-configurador.vercel.app). Mesmo
+ * embutido via <iframe> DENTRO do modumacc.com.br, o "pai" imediato desses iframes
+ * de add-to-cart é o app (vercel.app) — outro site — então o navegador trata os
+ * cookies como de TERCEIROS e os bloqueia (padrão do Chrome moderno). Resultado: o
+ * item parecia adicionado, mas o carrinho chegava vazio no checkout.
  *
- * Solução adotada (sem exigir NENHUMA mudança no WordPress do cliente):
- * carregar cada URL de add-to-cart, em sequência, dentro de um <iframe> escondido,
- * esperando cada uma terminar antes de disparar a próxima — e só então redirecionar
- * a aba de verdade pra página de carrinho. Isso funciona porque cada carregamento
- * do iframe é, do ponto de vista do WooCommerce, uma visita normal que seta o cookie
- * de sessão/carrinho do site dele.
+ * SOLUÇÃO ATUAL (confiável em qualquer cenário — embutido OU link direto):
+ * navegar a ABA INTEIRA (`window.top`) pra uma URL de PRIMEIRA-PARTE no próprio
+ * modumacc.com.br: `https://modumacc.com.br/?modumacc_cart=<varId>:<qtd>,...`.
+ * Um pequeno trecho de PHP no WordPress (ver README / snippet entregue ao cliente)
+ * lê esse parâmetro, adiciona cada variação ao carrinho NO SERVIDOR (sessão/cookie
+ * setados em primeira-parte, sem depender de JS nem de cookies de terceiros) e
+ * redireciona pro checkout (`/finalizar-compra/`). Como é navegação top-level pro
+ * próprio domínio do site, o cookie de carrinho é sempre primeira-parte.
  *
- * ARMADILHA A EVITAR: bloqueio de cookies de terceiros. Se este app estiver hospedado
- * num domínio DIFERENTE do site (ex: configurador.vercel.app) e for aberto como link
- * externo (não embutido), os iframes escondidos apontando pra modumacc.com.br são
- * "terceiros" pro navegador e safari/chrome/firefox podem bloquear os cookies —
- * o item pareceria adicionado mas o carrinho chegaria vazio no checkout.
- *
- * POR ISSO a recomendação de arquitetura (ver README) é EMBUTIR o configurador via
- * <iframe> DENTRO de uma página do próprio modumacc.com.br (não como link pra fora).
- * Nesse caso, o iframe de add-to-cart tem a MESMA origem do site que está no topo da
- * aba do navegador — o que a maioria dos navegadores trata como primeira-parte,
- * mesmo esse iframe estando aninhado dentro do nosso app. Isso deixa o fluxo confiável.
- *
- * Se o cliente preferir um link simples pra fora mesmo assim, o modo mais seguro é
- * reduzir pra 1 requisição: usar a Store API de carrinho (`/wc/store/v1/cart/add-item`,
- * que aceita chamadas de outra origem) pra montar o carrinho ANTES do redirect final —
- * fica como evolução pós-MVP, não implementado agora pra não adicionar complexidade
- * sem necessidade (ver README > "Próximos passos").
+ * Contrato da URL: `?modumacc_cart=2375:1,2380:2` = variação 2375 (qtd 1) + 2380 (qtd 2).
+ * Mandamos só o ID da variação; o PHP descobre o produto-pai e os atributos sozinho.
  */
 
-export interface CartRedirectPlan {
-  itemUrls: string[];
-  checkoutPageUrl: string;
-}
-
-export function buildCartRedirectPlan(modules: PlacedModule[]): CartRedirectPlan {
-  const itemUrls = modules
-    .map((m) => m.resolvedAddToCartUrl)
-    .filter((url): url is string => Boolean(url));
-  return {
-    itemUrls,
-    // Cai direto no CHECKOUT (não no carrinho) com tudo já somado — pedido do cliente.
-    // Slug PT-BR do WooCommerce confirmado em modumacc.com.br: /finalizar-compra/.
-    checkoutPageUrl: `${WOO_SITE_URL}/finalizar-compra/`,
-  };
-}
-
-function loadHiddenIframe(url: string, timeoutMs = 8000): Promise<void> {
-  return new Promise((resolve) => {
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = url;
-
-    const cleanup = () => {
-      clearTimeout(timer);
-      iframe.remove();
-      resolve();
-    };
-    const timer = setTimeout(cleanup, timeoutMs);
-    iframe.onload = cleanup;
-    iframe.onerror = cleanup;
-    document.body.appendChild(iframe);
-  });
+/** Extrai o `variation_id` de uma URL de add-to-cart já resolvida (decodificada). */
+function variationIdFromUrl(url: string): string | null {
+  try {
+    return new URL(url).searchParams.get('variation_id');
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Adiciona todos os módulos ao carrinho real do WooCommerce e redireciona
- * a aba (`window.top`, pra funcionar mesmo se este app estiver num iframe)
- * pra tela de CHECKOUT do site, com todos os itens já somados.
+ * Monta a URL de primeira-parte que adiciona todos os módulos e cai no checkout.
+ * Agrega quantidades por variação (ex.: 4 módulos iguais viram `id:4`).
+ * Retorna `null` se não houver nenhuma variação resolvida.
+ */
+export function buildCheckoutUrl(modules: PlacedModule[]): string | null {
+  const counts = new Map<string, number>();
+  for (const m of modules) {
+    if (!m.resolvedAddToCartUrl) continue;
+    const vid = variationIdFromUrl(m.resolvedAddToCartUrl);
+    if (!vid) continue;
+    counts.set(vid, (counts.get(vid) ?? 0) + 1);
+  }
+  if (counts.size === 0) return null;
+  const parts = [...counts.entries()].map(([id, qty]) => `${id}:${qty}`);
+  return `${WOO_SITE_URL}/?modumacc_cart=${parts.join(',')}`;
+}
+
+/**
+ * Adiciona todos os módulos ao carrinho real do WooCommerce e leva o cliente
+ * direto pro checkout, com tudo já somado.
  *
- * Por que iframe também no caso de 1 módulo só: antes, com 1 item a gente
- * navegava direto pra URL de add-to-cart, mas isso DEIXAVA o cliente parado
- * na página do produto (não ia pro carrinho/checkout). Agora todo item é
- * adicionado via iframe escondido e, no fim, a aba inteira vai pro checkout —
- * assim o comportamento é o mesmo pra 1 ou N módulos: cai no checkout com tudo.
- * (Funciona em primeira-parte porque o app roda embutido num iframe DENTRO do
- * modumacc.com.br — ver nota grande no topo deste arquivo e o README.)
+ * Navega a aba inteira (`window.top`, pra funcionar mesmo embutido num iframe)
+ * pra uma URL de PRIMEIRA-PARTE no modumacc.com.br, onde o PHP faz o add-to-cart
+ * no servidor e redireciona pro checkout. Ver a nota grande no topo deste arquivo.
  */
 export async function addAllToCartAndRedirect(modules: PlacedModule[]): Promise<void> {
-  const { itemUrls, checkoutPageUrl } = buildCartRedirectPlan(modules);
-  if (itemUrls.length === 0) return;
-
+  const url = buildCheckoutUrl(modules);
+  if (!url) return;
   const target = window.top ?? window;
-
-  for (const url of itemUrls) {
-    await loadHiddenIframe(url);
-  }
-  target.location.href = checkoutPageUrl;
+  target.location.href = url;
 }
