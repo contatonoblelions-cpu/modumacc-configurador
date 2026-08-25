@@ -207,6 +207,8 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           const resolvedRaw =
               position === undefined ? packed : resolvePositionCm(others, position, size, room, packed, yBounds);
           const resolved = snapPositionCm(others, resolvedRaw, size, room, yBounds);
+          const isMicro = /microondas/i.test(mod.name.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+          const finalYAdd = band === 'superior' && !isMicro ? yBounds.minY : resolved.y;
 
       const placed: PlacedModule = {
               instanceId: `inst-${++instanceCounter}`,
@@ -217,7 +219,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
               heightCm: mod.heightCm,
               basePriceCents: mod.minPriceCents,
               offsetXCm: resolved.x,
-              offsetYCm: resolved.y,
+              offsetYCm: finalYAdd,
               rotationDeg: 0,
       };
           set({ modules: [...get().modules, placed] });
@@ -271,9 +273,11 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                   room,
                   yBounds,
                 );
+          const isMicroMove = /microondas/i.test(item.moduleName.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+          const finalYMove = band === 'superior' && !isMicroMove ? yBounds.minY : resolved.y;
           set({
                   modules: modules.map((m) =>
-                            m.instanceId === instanceId ? { ...m, offsetXCm: resolved.x, offsetYCm: resolved.y } : m,
+                            m.instanceId === instanceId ? { ...m, offsetXCm: resolved.x, offsetYCm: finalYMove } : m,
                                              ),
           });
     },
