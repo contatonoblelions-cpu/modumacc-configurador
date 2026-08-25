@@ -160,7 +160,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           const stoveW = room.stoveWidthCm && room.stoveWidthCm > 0 ? room.stoveWidthCm : STOVE_WIDTH_CM;
           const stoveH = room.stoveHeightCm && room.stoveHeightCm > 0 ? room.stoveHeightCm : STOVE_HEIGHT_CM;
           const stove: StoveFixture | null = room.includeStove
-            ? { offsetXCm: Math.max(0, Math.min(room.widthCm - stoveW, room.widthCm - stoveW)), widthCm: stoveW, heightCm: stoveH }
+            ? { offsetXCm: Math.max(0, Math.min(room.widthCm - stoveW, room.includeFridge ? fridgeW + 20 : 100)), widthCm: stoveW, heightCm: stoveH }
               : null;
           set({ room, step: 'build', sink, fridge, stove });
     },
