@@ -71,7 +71,12 @@ export function getBandYRange(
     return { minY: 0, maxY };
   }
 
-  const minY = Math.min(maxPossibleY, splitY);
+  // Modulo de CHAO: o topo nao pode ficar por baixo/atras da faixa da pia.
+  // A faixa da pia comeca na linha da bancada (splitY) e desce por ~3% da
+  // altura do ambiente (bate com `bandH = canvasHeight * 0.03` no BuildCanvas).
+  // Entao o limite de cima do modulo e a BASE dessa faixa: splitY + bandCm.
+  const bandCm = room.heightCm * 0.03;
+  const minY = Math.min(maxPossibleY, splitY + bandCm);
   const maxY = Math.max(minY, maxPossibleY);
   return { minY, maxY };
 }
