@@ -202,35 +202,11 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                   });
           }
           const band = getModuleBand(mod.name);
-          const yBounds = getBandYRange(band, room, mod.heightCm);
+          const yBounds = getBandYRange(band, room, mod.heightCm, mod.name);
           const packed = packedPositionCm(others, size, room, yBounds, band === 'base' ? 'bottom' : 'top');
           const resolvedRaw =
               position === undefined ? packed : resolvePositionCm(others, position, size, room, packed, yBounds);
           const resolved = snapPositionCm(others, resolvedRaw, size, room, yBounds);
-          const normName = (n: string) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-          const isMicro = /microondas/.test(normName(mod.name));
-          const isBasc = /basculante/.test(normName(mod.name));
-          let finalXAdd = resolved.x;
-          let finalYAdd = resolved.y;
-          const isRegSupAdd = band === 'superior' && !isMicro && !isBasc;
-          if (isRegSupAdd) {
-            const regs = get().modules.filter((n) => {
-              const nn = normName(n.moduleName);
-              return getModuleBand(n.moduleName) === 'superior' && !/microondas/.test(nn) && !/basculante/.test(nn);
-            });
-            if (regs.length > 0) finalYAdd = regs[0].offsetYCm;
-            const MAG = 30;
-            let gx: number | null = null;
-            let gGap = MAG;
-            for (const n of regs) {
-              const gR = Math.abs(resolved.x - (n.offsetXCm + n.widthCm));
-              const gL = Math.abs(resolved.x + widthCm - n.offsetXCm);
-              if (gR <= gGap) { gGap = gR; gx = n.offsetXCm + n.widthCm; }
-              if (gL <= gGap) { gGap = gL; gx = n.offsetXCm - widthCm; }
-            }
-            if (gx !== null) finalXAdd = Math.min(Math.max(0, gx), Math.max(0, room.widthCm - widthCm));
-          }
-
       const placed: PlacedModule = {
               instanceId: `inst-${++instanceCounter}`,
               moduleId: mod.id,
@@ -239,8 +215,8 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
               widthCm,
               heightCm: mod.heightCm,
               basePriceCents: mod.minPriceCents,
-              offsetXCm: finalXAdd,
-              offsetYCm: finalYAdd,
+              offsetXCm: resolved.x,
+              offsetYCm: resolved.y,
               rotationDeg: 0,
       };
           set({ modules: [...get().modules, placed] });
@@ -278,7 +254,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                   });
           }
           const band = getModuleBand(item.moduleName);
-          const yBounds = getBandYRange(band, room, item.heightCm);
+          const yBounds = getBandYRange(band, room, item.heightCm, item.moduleName);
           const resolvedRaw = resolvePositionCm(
                   others,
             { x: targetXCm, y: targetYCm },
@@ -294,38 +270,10 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                   room,
                   yBounds,
                 );
-          const normNameMv = (n: string) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-          const isMicroMove = /microondas/.test(normNameMv(item.moduleName));
-          const isBascMove = /basculante/.test(normNameMv(item.moduleName));
-          let finalXMove = resolved.x;
-          const finalYMove = resolved.y;
-          const isRegSupMove = band === 'superior' && !isMicroMove && !isBascMove;
-          if (isRegSupMove) {
-            const MAG = 30;
-            let gx: number | null = null;
-            let gGap = MAG;
-            for (const n of modules) {
-              if (n.instanceId === instanceId) continue;
-              const nn = normNameMv(n.moduleName);
-              if (getModuleBand(n.moduleName) !== 'superior' || /microondas/.test(nn) || /basculante/.test(nn)) continue;
-              const gR = Math.abs(resolved.x - (n.offsetXCm + n.widthCm));
-              const gL = Math.abs(resolved.x + item.widthCm - n.offsetXCm);
-              if (gR <= gGap) { gGap = gR; gx = n.offsetXCm + n.widthCm; }
-              if (gL <= gGap) { gGap = gL; gx = n.offsetXCm - item.widthCm; }
-            }
-            if (gx !== null) finalXMove = Math.min(Math.max(0, gx), Math.max(0, room.widthCm - item.widthCm));
-          }
           set({
-                  modules: modules.map((m) => {
-                            if (m.instanceId === instanceId) return { ...m, offsetXCm: finalXMove, offsetYCm: finalYMove };
-                            if (isRegSupMove) {
-                              const nn = normNameMv(m.moduleName);
-                              if (getModuleBand(m.moduleName) === 'superior' && !/microondas/.test(nn) && !/basculante/.test(nn)) {
-                                return { ...m, offsetYCm: finalYMove };
-                              }
-                            }
-                            return m;
-                  }),
+                  modules: modules.map((m) =>
+                            m.instanceId === instanceId ? { ...m, offsetXCm: resolved.x, offsetYCm: resolved.y } : m,
+                                             ),
           });
     },
 
