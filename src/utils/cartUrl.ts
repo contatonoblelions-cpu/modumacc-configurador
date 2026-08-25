@@ -40,7 +40,7 @@ import type { PlacedModule } from '../types/composition';
 
 export interface CartRedirectPlan {
   itemUrls: string[];
-  cartPageUrl: string;
+  checkoutPageUrl: string;
 }
 
 export function buildCartRedirectPlan(modules: PlacedModule[]): CartRedirectPlan {
@@ -49,7 +49,9 @@ export function buildCartRedirectPlan(modules: PlacedModule[]): CartRedirectPlan
     .filter((url): url is string => Boolean(url));
   return {
     itemUrls,
-    cartPageUrl: `${WOO_SITE_URL}/carrinho/`,
+    // Cai direto no CHECKOUT (não no carrinho) com tudo já somado — pedido do cliente.
+    // Slug PT-BR do WooCommerce confirmado em modumacc.com.br: /finalizar-compra/.
+    checkoutPageUrl: `${WOO_SITE_URL}/finalizar-compra/`,
   };
 }
 
@@ -74,22 +76,24 @@ function loadHiddenIframe(url: string, timeoutMs = 8000): Promise<void> {
 /**
  * Adiciona todos os módulos ao carrinho real do WooCommerce e redireciona
  * a aba (`window.top`, pra funcionar mesmo se este app estiver num iframe)
- * pra página de carrinho do site, de onde o cliente segue o checkout normal.
+ * pra tela de CHECKOUT do site, com todos os itens já somados.
+ *
+ * Por que iframe também no caso de 1 módulo só: antes, com 1 item a gente
+ * navegava direto pra URL de add-to-cart, mas isso DEIXAVA o cliente parado
+ * na página do produto (não ia pro carrinho/checkout). Agora todo item é
+ * adicionado via iframe escondido e, no fim, a aba inteira vai pro checkout —
+ * assim o comportamento é o mesmo pra 1 ou N módulos: cai no checkout com tudo.
+ * (Funciona em primeira-parte porque o app roda embutido num iframe DENTRO do
+ * modumacc.com.br — ver nota grande no topo deste arquivo e o README.)
  */
 export async function addAllToCartAndRedirect(modules: PlacedModule[]): Promise<void> {
-  const { itemUrls, cartPageUrl } = buildCartRedirectPlan(modules);
+  const { itemUrls, checkoutPageUrl } = buildCartRedirectPlan(modules);
   if (itemUrls.length === 0) return;
 
   const target = window.top ?? window;
 
-  // Caso comum (1 módulo só): navegação direta, sem iframe — o mais confiável possível.
-  if (itemUrls.length === 1) {
-    target.location.href = itemUrls[0];
-    return;
-  }
-
   for (const url of itemUrls) {
     await loadHiddenIframe(url);
   }
-  target.location.href = cartPageUrl;
+  target.location.href = checkoutPageUrl;
 }
