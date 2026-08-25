@@ -43,7 +43,7 @@ function DraggableSink({ sink, scale, canvasHeight, counterRatio }: { sink: Sink
       {...listeners}
       {...attributes}
       style={{ left: sink.offsetXCm * scale, top: topPx, width: w, height: faucetH + bandH }}
-      className={`absolute z-20 touch-none cursor-grab transition active:cursor-grabbing ${
+      className={`absolute z-0 touch-none cursor-grab transition active:cursor-grabbing ${
         isDragging ? 'z-30 opacity-70' : ''
       }`}
       title="Arraste para posicionar a pia"
@@ -602,16 +602,6 @@ export function BuildCanvas() {
             backgroundImage:
               'repeating-linear-gradient(90deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px), repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 34px)',
             backgroundColor: '#efe9dd',
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0"
-          style={{
-            top: `${counterRatio * 100}%`,
-            height: '3%',
-            backgroundImage: 'linear-gradient(180deg, #4a5a63 0%, #33414a 100%)',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15)',
           }}
         />
 
