@@ -83,8 +83,6 @@ export function snapPositionCm(
         y + size.heightCm > o.y + EPS,
     );
 
-  const verticallyOverlaps = (o: PlacedRect) =>
-    pos.y < o.y + o.heightCm && pos.y + size.heightCm > o.y;
   const horizontallyOverlaps = (o: PlacedRect) =>
     pos.x < o.x + o.widthCm && pos.x + size.widthCm > o.x;
 
@@ -107,21 +105,37 @@ export function snapPositionCm(
     return Math.min(max, Math.max(min, best));
   }
 
-  const xCandidates: number[] = [0, maxX];
+  // --- Y primeiro: "linhas-guia" horizontais imaginarias ---
+  // O TOPO (e a BASE) de cada modulo ja colocado viram uma linha invisivel;
+  // quando o modulo arrastado chega perto (< SNAP_CM), ele gruda nessa linha.
+  // Assim da pra posicionar livre na altura que quiser, mas os topos alinham
+  // sozinhos quando voce aproxima um do outro. Empilhar (sentar em cima / sob)
+  // so entra quando ha sobreposicao horizontal.
   const yCandidates: number[] = [minY, maxY];
   for (const o of others) {
-    if (verticallyOverlaps(o)) {
-      xCandidates.push(o.x + o.widthCm);
-      xCandidates.push(o.x - size.widthCm);
-    }
+    yCandidates.push(o.y);                               // topo alinha com topo
+    yCandidates.push(o.y + o.heightCm - size.heightCm);  // base alinha com base
     if (horizontallyOverlaps(o)) {
-      yCandidates.push(o.y + o.heightCm);
-      yCandidates.push(o.y - size.heightCm);
+      yCandidates.push(o.y + o.heightCm);                // sentar embaixo do vizinho
+      yCandidates.push(o.y - size.heightCm);             // sentar em cima do vizinho
     }
   }
-
-  const snappedX = snapAxis(pos.x, 0, maxX, xCandidates);
   const snappedY = snapAxis(pos.y, minY, maxY, yCandidates);
+
+  // --- X depois, usando o Y ja alinhado: encostar RENTE nas laterais ---
+  // (e alinhar bordas esquerda/direita) com quem estiver na mesma faixa vertical.
+  const vOverlapAtSnapY = (o: PlacedRect) =>
+    snappedY < o.y + o.heightCm && snappedY + size.heightCm > o.y;
+  const xCandidates: number[] = [0, maxX];
+  for (const o of others) {
+    if (vOverlapAtSnapY(o)) {
+      xCandidates.push(o.x + o.widthCm);                 // rente a direita do vizinho
+      xCandidates.push(o.x - size.widthCm);              // rente a esquerda do vizinho
+      xCandidates.push(o.x);                             // alinha borda esquerda
+      xCandidates.push(o.x + o.widthCm - size.widthCm);  // alinha borda direita
+    }
+  }
+  const snappedX = snapAxis(pos.x, 0, maxX, xCandidates);
 
   if (!overlapsAt(snappedX, snappedY)) return { x: snappedX, y: snappedY };
   if (!overlapsAt(snappedX, pos.y)) return { x: snappedX, y: pos.y };

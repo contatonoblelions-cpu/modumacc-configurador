@@ -65,9 +65,9 @@ export function getBandYRange(
 
   if (band === 'superior') {
     const maxY = Math.max(0, Math.min(maxPossibleY, splitY - moduleHeightCm));
-    const nn = name ? name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
-    const isRegular = !!name && !/microondas/.test(nn) && !/basculante/.test(nn);
-    if (isRegular) return { minY: 0, maxY: 0 };
+    // Modulo de parede e LIVRE em Y dentro da faixa aerea (topo ate a bancada).
+    // O ima de alinhamento (snapPositionCm) e quem junta e alinha os topos.
+    void name;
     return { minY: 0, maxY };
   }
 
