@@ -55,6 +55,7 @@ export function getBandYRange(
   band: ModuleBand,
   room: RoomDimensions,
   moduleHeightCm: number,
+  name?: string,
 ): { minY: number; maxY: number } {
   const splitY =
     room.heightCm > COUNTERTOP_HEIGHT_CM
@@ -64,6 +65,9 @@ export function getBandYRange(
 
   if (band === 'superior') {
     const maxY = Math.max(0, Math.min(maxPossibleY, splitY - moduleHeightCm));
+    const nn = name ? name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
+    const isRegular = !!name && !/microondas/.test(nn) && !/basculante/.test(nn);
+    if (isRegular) return { minY: 0, maxY: 0 };
     return { minY: 0, maxY };
   }
 
