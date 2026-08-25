@@ -437,6 +437,7 @@ export function BuildCanvas() {
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const [availH, setAvailH] = useState(420);
+  const [availW, setAvailW] = useState(760);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -459,6 +460,8 @@ export function BuildCanvas() {
     const obs = new ResizeObserver((entries) => {
       const h = entries[0]?.contentRect.height;
       if (h) setAvailH(h);
+      const w = entries[0]?.contentRect.width;
+      if (w) setAvailW(w);
     });
     obs.observe(el);
     return () => obs.disconnect();
@@ -476,7 +479,7 @@ export function BuildCanvas() {
   const targetBoxHDesk = Math.max(260, availH - 88);
   const scale = isMobile
     ? Math.min(targetBoxH / room.heightCm, widthScale * 3)
-    : Math.min(widthScale, targetBoxHDesk / room.heightCm);
+    : Math.min((availW - 96) / room.widthCm, targetBoxHDesk / room.heightCm);
   const canvasHeight = Math.round(room.heightCm * scale);
   const canvasBoxWidth = Math.round(room.widthCm * scale);
   const counterRatio = getCountertopRatio(room);
