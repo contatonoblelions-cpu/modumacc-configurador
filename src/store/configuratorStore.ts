@@ -213,25 +213,30 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           let finalXAdd = resolved.x;
           let finalYAdd = resolved.y;
           if (band === 'superior' && !isMicro && !isBasc) {
-            const ALIGN = 40;
-            const MAG = 20;
+            const MAG = 30;
+            const ALIGN = 60;
             const regs = get().modules.filter((n) => {
               const nn = normName(n.moduleName);
               return getModuleBand(n.moduleName) === 'superior' && !/microondas/.test(nn) && !/basculante/.test(nn);
             });
-            let ny: number | null = null;
-            let byd = ALIGN;
-            for (const n of regs) { const d = Math.abs(n.offsetYCm - resolved.y); if (d <= byd) { byd = d; ny = n.offsetYCm; } }
-            if (ny !== null) finalYAdd = ny;
-            let nx: number | null = null;
-            let bxg = MAG;
+            let gx: number | null = null;
+            let gy = 0;
+            let gGap = MAG;
             for (const n of regs) {
               const gR = Math.abs(resolved.x - (n.offsetXCm + n.widthCm));
               const gL = Math.abs(resolved.x + widthCm - n.offsetXCm);
-              if (gR <= bxg) { bxg = gR; nx = n.offsetXCm + n.widthCm; }
-              if (gL <= bxg) { bxg = gL; nx = n.offsetXCm - widthCm; }
+              if (gR <= gGap) { gGap = gR; gx = n.offsetXCm + n.widthCm; gy = n.offsetYCm; }
+              if (gL <= gGap) { gGap = gL; gx = n.offsetXCm - widthCm; gy = n.offsetYCm; }
             }
-            if (nx !== null) finalXAdd = Math.min(Math.max(0, nx), Math.max(0, room.widthCm - widthCm));
+            if (gx !== null) {
+              finalXAdd = Math.min(Math.max(0, gx), Math.max(0, room.widthCm - widthCm));
+              finalYAdd = gy;
+            } else {
+              let ny: number | null = null;
+              let byd = ALIGN;
+              for (const n of regs) { const d = Math.abs(n.offsetYCm - resolved.y); if (d <= byd) { byd = d; ny = n.offsetYCm; } }
+              if (ny !== null) finalYAdd = ny;
+            }
           }
 
       const placed: PlacedModule = {
@@ -303,26 +308,31 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           let finalXMove = resolved.x;
           let finalYMove = resolved.y;
           if (band === 'superior' && !isMicroMove && !isBascMove) {
-            const ALIGN = 40;
-            const MAG = 20;
+            const MAG = 30;
+            const ALIGN = 60;
             const regs = modules.filter((n) => {
               if (n.instanceId === instanceId) return false;
               const nn = normNameMv(n.moduleName);
               return getModuleBand(n.moduleName) === 'superior' && !/microondas/.test(nn) && !/basculante/.test(nn);
             });
-            let ny: number | null = null;
-            let byd = ALIGN;
-            for (const n of regs) { const d = Math.abs(n.offsetYCm - resolved.y); if (d <= byd) { byd = d; ny = n.offsetYCm; } }
-            if (ny !== null) finalYMove = ny;
-            let nx: number | null = null;
-            let bxg = MAG;
+            let gx: number | null = null;
+            let gy = 0;
+            let gGap = MAG;
             for (const n of regs) {
               const gR = Math.abs(resolved.x - (n.offsetXCm + n.widthCm));
               const gL = Math.abs(resolved.x + item.widthCm - n.offsetXCm);
-              if (gR <= bxg) { bxg = gR; nx = n.offsetXCm + n.widthCm; }
-              if (gL <= bxg) { bxg = gL; nx = n.offsetXCm - item.widthCm; }
+              if (gR <= gGap) { gGap = gR; gx = n.offsetXCm + n.widthCm; gy = n.offsetYCm; }
+              if (gL <= gGap) { gGap = gL; gx = n.offsetXCm - item.widthCm; gy = n.offsetYCm; }
             }
-            if (nx !== null) finalXMove = Math.min(Math.max(0, nx), Math.max(0, room.widthCm - item.widthCm));
+            if (gx !== null) {
+              finalXMove = Math.min(Math.max(0, gx), Math.max(0, room.widthCm - item.widthCm));
+              finalYMove = gy;
+            } else {
+              let ny: number | null = null;
+              let byd = ALIGN;
+              for (const n of regs) { const d = Math.abs(n.offsetYCm - resolved.y); if (d <= byd) { byd = d; ny = n.offsetYCm; } }
+              if (ny !== null) finalYMove = ny;
+            }
           }
           set({
                   modules: modules.map((m) =>
