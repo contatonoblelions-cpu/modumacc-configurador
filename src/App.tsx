@@ -24,7 +24,8 @@ type DragData =
   | { type: 'catalog-module'; moduleId: number; moduleName: string; widthCm: number; heightCm: number }
   | { type: 'placed-module'; instanceId: string; moduleName: string; widthCm: number; heightCm: number }
   | { type: 'sink' }
-  | { type: 'fridge' };
+  | { type: 'fridge' }
+  | { type: 'stove' };
 
 function App() {
   const step = useConfiguratorStore((s) => s.step);
@@ -36,6 +37,7 @@ function App() {
   const modules = useConfiguratorStore((s) => s.modules);
   const moveSink = useConfiguratorStore((s) => s.moveSink);
   const moveFridge = useConfiguratorStore((s) => s.moveFridge);
+  const moveStove = useConfiguratorStore((s) => s.moveStove);
   const setDragPreview = useConfiguratorStore((s) => s.setDragPreview);
   const autoAddedRef = useRef(false);
 
@@ -126,7 +128,7 @@ function App() {
     if (over.id !== WALL_DROPPABLE_ID) return null;
 
     const data = active.data.current as DragData | undefined;
-    if (!data || data.type === 'sink' || data.type === 'fridge') return null;
+    if (!data || data.type === 'sink' || data.type === 'fridge' || data.type === 'stove') return null;
 
     const translated = active.rect.current.translated;
     if (!translated || !over.rect.width) return null;
@@ -187,6 +189,23 @@ function App() {
     return relativeX / scale;
   }
 
+  /** Calcula a posição X (cm) do fogão se fosse solto agora -- mesma lógica de `computeFridgeX`. */
+  function computeStoveX(event: DragMoveEvent | DragEndEvent): number | null {
+    const { active, over } = event;
+    if (!over || !room) return null;
+    if (over.id !== WALL_DROPPABLE_ID) return null;
+    const data = active.data.current as DragData | undefined;
+    if (!data || data.type !== 'stove') return null;
+
+    const translated = active.rect.current.translated;
+    if (!translated || !over.rect.width) return null;
+
+    const scale = over.rect.width / room.widthCm;
+    const centerX = translated.left + translated.width / 2;
+    const relativeX = centerX - over.rect.left;
+    return relativeX / scale;
+  }
+
   /** Atualiza o indicador "fantasma" a cada movimento — dá o feedback em tempo real de onde o módulo vai encaixar. */
   function handleDragMove(event: DragMoveEvent) {
     const data = event.active.data.current as DragData | undefined;
@@ -198,6 +217,11 @@ function App() {
     if (data?.type === 'fridge') {
       const fridgeX = computeFridgeX(event);
       if (fridgeX !== null) moveFridge(fridgeX);
+      return;
+    }
+    if (data?.type === 'stove') {
+      const stoveX = computeStoveX(event);
+      if (stoveX !== null) moveStove(stoveX);
       return;
     }
     const target = computeDropTarget(event);
@@ -218,6 +242,12 @@ function App() {
     if (data.type === 'fridge') {
       const fridgeX = computeFridgeX(event);
       if (fridgeX !== null) moveFridge(fridgeX);
+      return;
+    }
+
+    if (data.type === 'stove') {
+      const stoveX = computeStoveX(event);
+      if (stoveX !== null) moveStove(stoveX);
       return;
     }
 

@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import type { CatalogModule } from '../types/catalog';
-import type { PlacedModule, RoomDimensions, SinkFixture, FridgeFixture } from '../types/composition';
+import type { PlacedModule, RoomDimensions, SinkFixture, FridgeFixture, StoveFixture } from '../types/composition';
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { buildCollageDataUrl, buildRenderModules, generateRender } from '../api/generateRender';
 import { resolvePositionCm, packedPositionCm, snapPositionCm } from '../utils/placement';
 import { getModuleBand, getBandYRange } from '../utils/bands';
 import { FRIDGE_WIDTH_CM, FRIDGE_HEIGHT_CM } from '../utils/fridge';
+import { STOVE_WIDTH_CM, STOVE_HEIGHT_CM } from '../utils/stove';
 
 type Step = 'room' | 'build' | 'review';
 
@@ -56,6 +57,8 @@ interface ConfiguratorState {
   sink: SinkFixture | null;
     /** Geladeira de referência visual -- null quando o cliente não marcou "incluir geladeira" (ver `RoomDimensions.includeFridge`). */
   fridge: FridgeFixture | null;
+    /** Fogão de referência visual -- null quando o cliente não marcou "incluir fogão". */
+  stove: StoveFixture | null;
 
   loadCatalog: () => Promise<void>;
     setRoom: (room: RoomDimensions) => void;
@@ -95,6 +98,8 @@ interface ConfiguratorState {
   moveSink: (targetXCm: number) => void;
     /** Move a geladeira pra uma posição X (cm) livre horizontalmente dentro do espaço -- fica sempre encostada no chão, só desliza pros lados (mesma lógica de `moveSink`). */
   moveFridge: (targetXCm: number) => void;
+    /** Move o fogão horizontalmente (mesma lógica de `moveFridge`). */
+  moveStove: (targetXCm: number) => void;
     setFinish: (finish: string) => void;
     setHandle: (handle: string) => void;
     /** Resolve preço + URL de add-to-cart de cada módulo colocado contra acabamento/puxador atuais. */
@@ -120,6 +125,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     dragPreview: null,
     sink: null,
     fridge: null,
+    stove: null,
 
     loadCatalog: async () => {
           set({ catalogLoading: true, catalogError: null });
@@ -151,7 +157,12 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           const fridge: FridgeFixture | null = room.includeFridge
             ? { offsetXCm: Math.max(0, Math.min(room.widthCm - fridgeW, 0)), widthCm: fridgeW, heightCm: fridgeH }
               : null;
-          set({ room, step: 'build', sink, fridge });
+          const stoveW = room.stoveWidthCm && room.stoveWidthCm > 0 ? room.stoveWidthCm : STOVE_WIDTH_CM;
+          const stoveH = room.stoveHeightCm && room.stoveHeightCm > 0 ? room.stoveHeightCm : STOVE_HEIGHT_CM;
+          const stove: StoveFixture | null = room.includeStove
+            ? { offsetXCm: Math.max(0, Math.min(room.widthCm - stoveW, room.widthCm - stoveW)), widthCm: stoveW, heightCm: stoveH }
+              : null;
+          set({ room, step: 'build', sink, fridge, stove });
     },
 
     setRoomPhoto: (photo) => set({ roomPhoto: photo }),
@@ -179,6 +190,15 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                             y: Math.max(0, room.heightCm - fridge.heightCm),
                             widthCm: fridge.widthCm,
                             heightCm: fridge.heightCm,
+                  });
+          }
+          const stoveObs = get().stove;
+          if (stoveObs) {
+                  others.push({
+                            x: stoveObs.offsetXCm,
+                            y: Math.max(0, room.heightCm - stoveObs.heightCm),
+                            widthCm: stoveObs.widthCm,
+                            heightCm: stoveObs.heightCm,
                   });
           }
           const band = getModuleBand(mod.name);
@@ -225,6 +245,15 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                             heightCm: fridgeObstacle.heightCm,
                   });
           }
+          const stoveObstacle = get().stove;
+          if (stoveObstacle) {
+                  others.push({
+                            x: stoveObstacle.offsetXCm,
+                            y: Math.max(0, room.heightCm - stoveObstacle.heightCm),
+                            widthCm: stoveObstacle.widthCm,
+                            heightCm: stoveObstacle.heightCm,
+                  });
+          }
           const band = getModuleBand(item.moduleName);
           const yBounds = getBandYRange(band, room, item.heightCm);
           const resolvedRaw = resolvePositionCm(
@@ -263,6 +292,14 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           const maxX = Math.max(0, room.widthCm - fridge.widthCm);
           const offsetXCm = Math.min(maxX, Math.max(0, targetXCm));
           set({ fridge: { ...fridge, offsetXCm } });
+    },
+
+    moveStove: (targetXCm) => {
+          const { stove, room } = get();
+          if (!stove || !room) return;
+          const maxX = Math.max(0, room.widthCm - stove.widthCm);
+          const offsetXCm = Math.min(maxX, Math.max(0, targetXCm));
+          set({ stove: { ...stove, offsetXCm } });
     },
 
     rotateModule: (instanceId, deltaDeg) =>

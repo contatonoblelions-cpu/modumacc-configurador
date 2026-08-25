@@ -7,3 +7,4 @@
  */
 export const STOVE_WIDTH_CM = 52;
 export const STOVE_HEIGHT_CM = 90;
+export const STOVE_PHOTO = '/modules/fogao.jpg';

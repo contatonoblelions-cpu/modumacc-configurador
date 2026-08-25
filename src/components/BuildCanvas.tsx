@@ -7,9 +7,10 @@ import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
 import { SinkFixture } from './SinkFixture';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
-import type { PlacedModule, SinkFixture as SinkFixtureData, FridgeFixture as FridgeFixtureData } from '../types/composition';
+import type { PlacedModule, SinkFixture as SinkFixtureData, FridgeFixture as FridgeFixtureData, StoveFixture as StoveFixtureData } from '../types/composition';
 import { getCountertopRatio } from '../utils/bands';
 import { FRIDGE_PHOTO } from '../utils/fridge';
+import { STOVE_PHOTO } from '../utils/stove';
 
 /**
  * Pia arrastável -- só na horizontal (encostada na linha da bancada,
@@ -85,6 +86,44 @@ function DraggableFridge({
       title="Arraste para posicionar a geladeira (referência visual)"
     >
       <img src={FRIDGE_PHOTO} alt="Geladeira (referência)" className="h-full w-full object-fill drop-shadow-md" />
+    </div>
+  );
+}
+
+/**
+ * Fogão arrastável -- elemento SÓ VISUAL/referência (igual `DraggableFridge`):
+ * só se move na horizontal, sempre encostado no chão. Renderiza a FOTO em
+ * `public/modules/fogao.jpg`.
+ */
+function DraggableStove({
+  stove,
+  scale,
+  canvasHeight,
+}: {
+  stove: StoveFixtureData;
+  scale: number;
+  canvasHeight: number;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: 'stove',
+    data: { type: 'stove' },
+  });
+  const widthPx = stove.widthCm * scale;
+  const heightPx = stove.heightCm * scale;
+  const topPx = canvasHeight - heightPx;
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={{ left: stove.offsetXCm * scale, top: topPx, width: widthPx, height: heightPx }}
+      className={`absolute z-0 touch-none cursor-grab transition active:cursor-grabbing ${
+        isDragging ? 'z-30 opacity-60' : ''
+      }`}
+      title="Arraste para posicionar o fogão (referência visual)"
+    >
+      <img src={STOVE_PHOTO} alt="Fogão (referência)" className="h-full w-full object-fill drop-shadow-md" />
     </div>
   );
 }
@@ -382,6 +421,7 @@ export function BuildCanvas() {
   const modules = useConfiguratorStore((s) => s.modules);
   const sink = useConfiguratorStore((s) => s.sink);
   const fridge = useConfiguratorStore((s) => s.fridge);
+  const stove = useConfiguratorStore((s) => s.stove);
   const removeModule = useConfiguratorStore((s) => s.removeModule);
   const rotateModule = useConfiguratorStore((s) => s.rotateModule);
   const dragPreview = useConfiguratorStore((s) => s.dragPreview);
@@ -604,6 +644,7 @@ export function BuildCanvas() {
 
         {sink && <DraggableSink sink={sink} scale={scale} canvasHeight={canvasHeight} counterRatio={counterRatio} />}
         {fridge && <DraggableFridge fridge={fridge} scale={scale} canvasHeight={canvasHeight} />}
+        {stove && <DraggableStove stove={stove} scale={scale} canvasHeight={canvasHeight} />}
       </div>
         </div>
       </div>
