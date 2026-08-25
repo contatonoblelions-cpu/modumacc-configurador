@@ -260,7 +260,7 @@ function DimLineV({ y1, y2, x, label }: { y1: number; y2: number; x: number; lab
   );
 }
 
-const CANVAS_MAX_PX = 760;
+const CANVAS_MAX_PX = 1600;
 /** Altura mínima/máxima do quadrante em px, só pra não ficar minúsculo ou gigante em ambientes muito baixos/altos. */
 const CANVAS_MIN_H_PX = 220;
 const CANVAS_MAX_H_PX = 560;
@@ -473,13 +473,12 @@ export function BuildCanvas() {
   // (até preencher o espaço disponível) e, se ficar mais larga que o celular, rola pro lado.
   const isMobile = canvasWidth < 700;
   const targetBoxH = Math.max(180, availH - 64);
+  const targetBoxHDesk = Math.max(260, availH - 88);
   const scale = isMobile
     ? Math.min(targetBoxH / room.heightCm, widthScale * 3)
-    : widthScale;
-  const canvasHeight = isMobile
-    ? Math.round(room.heightCm * scale)
-    : Math.round(Math.min(CANVAS_MAX_H_PX, Math.max(CANVAS_MIN_H_PX, room.heightCm * scale)));
-  const canvasBoxWidth = isMobile ? Math.round(room.widthCm * scale) : canvasWidth;
+    : Math.min(widthScale, targetBoxHDesk / room.heightCm);
+  const canvasHeight = Math.round(room.heightCm * scale);
+  const canvasBoxWidth = Math.round(room.widthCm * scale);
   const counterRatio = getCountertopRatio(room);
 
   return (
@@ -509,9 +508,9 @@ export function BuildCanvas() {
         </p>
       )}
 
-      <div className="flex items-start">
+      <div className="flex items-start md:justify-center">
         <RulerVertical heightCm={room.heightCm} scale={scale} />
-        <div ref={wrapperRef} className="min-w-0 flex-1 overflow-x-auto">
+        <div ref={wrapperRef} className="min-w-0 flex-1 overflow-x-auto md:flex-none">
           <RulerHorizontal widthCm={room.widthCm} scale={scale} />
 
       <div
