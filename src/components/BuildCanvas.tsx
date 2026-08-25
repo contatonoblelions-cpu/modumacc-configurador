@@ -30,21 +30,39 @@ function DraggableSink({ sink, scale, canvasHeight, counterRatio }: { sink: Sink
     id: 'sink',
     data: { type: 'sink' },
   });
-  const sizePx = sink.widthCm * scale;
-  const topPx = canvasHeight * counterRatio - sizePx * 0.42;
+  const w = sink.widthCm * scale;
+  const lineY = canvasHeight * counterRatio;
+  const bandH = Math.max(7, canvasHeight * 0.03);
+  const faucetH = Math.max(30, Math.min(canvasHeight * 0.2, 72));
+  const faucetW = Math.max(16, Math.min(w * 0.5, faucetH * 0.55));
+  const topPx = lineY - faucetH;
 
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      style={{ left: sink.offsetXCm * scale, top: topPx, width: sizePx, height: sizePx * 0.6 }}
-      className={`absolute z-0 touch-none cursor-grab transition active:cursor-grabbing ${
-        isDragging ? 'z-30 opacity-60' : ''
+      style={{ left: sink.offsetXCm * scale, top: topPx, width: w, height: faucetH + bandH }}
+      className={`absolute z-20 touch-none cursor-grab transition active:cursor-grabbing ${
+        isDragging ? 'z-30 opacity-70' : ''
       }`}
       title="Arraste para posicionar a pia"
     >
-      <SinkFixture className="h-full w-full drop-shadow-md" />
+      <div className="absolute" style={{ left: (w - faucetW) / 2, top: 0, width: faucetW, height: faucetH }}>
+        <SinkFixture className="h-full w-full drop-shadow-md" />
+      </div>
+      <div
+        className="absolute"
+        style={{
+          left: 0,
+          top: faucetH,
+          width: w,
+          height: bandH,
+          backgroundImage: 'linear-gradient(180deg, #2b373f 0%, #1c262c 100%)',
+          borderRadius: 4,
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 3px rgba(0,0,0,0.30)',
+        }}
+      />
     </div>
   );
 }
