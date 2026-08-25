@@ -144,7 +144,7 @@ function App() {
     const rawY = relativeY / scale - heightCm / 2;
 
     const band = getModuleBand(data.moduleName);
-    const { minY, maxY } = getBandYRange(band, room, heightCm);
+    const { minY, maxY } = getBandYRange(band, room, heightCm, data.moduleName);
     const y = Math.min(maxY, Math.max(minY, rawY));
 
     const others = modules
