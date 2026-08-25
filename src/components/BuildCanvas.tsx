@@ -33,7 +33,7 @@ function DraggableSink({ sink, scale, canvasHeight, counterRatio }: { sink: Sink
   const w = sink.widthCm * scale;
   const lineY = canvasHeight * counterRatio;
   const bandH = Math.max(7, canvasHeight * 0.03);
-  const faucetH = Math.max(30, Math.min(canvasHeight * 0.2, 72));
+  const faucetH = Math.max(18, Math.min(canvasHeight * 0.12, 43));
   const faucetW = Math.max(16, Math.min(w * 0.5, faucetH * 0.55));
   const topPx = lineY - faucetH;
 
