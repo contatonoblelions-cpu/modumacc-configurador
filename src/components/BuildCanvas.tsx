@@ -474,7 +474,7 @@ export function BuildCanvas() {
   const isMobile = canvasWidth < 700;
   const targetBoxH = Math.max(180, availH - 64);
   const scale = isMobile
-    ? Math.max(widthScale, Math.min(targetBoxH / room.heightCm, widthScale * 3))
+    ? Math.min(targetBoxH / room.heightCm, widthScale * 3)
     : widthScale;
   const canvasHeight = isMobile
     ? Math.round(room.heightCm * scale)
