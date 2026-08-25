@@ -262,8 +262,6 @@ function DimLineV({ y1, y2, x, label }: { y1: number; y2: number; x: number; lab
 
 const CANVAS_MAX_PX = 1600;
 /** Altura mínima/máxima do quadrante em px, só pra não ficar minúsculo ou gigante em ambientes muito baixos/altos. */
-const CANVAS_MIN_H_PX = 220;
-const CANVAS_MAX_H_PX = 560;
 
 /** ID único do quadrante inteiro — não existem mais fileiras separadas, é UM só droppable pra parede toda. */
 export const WALL_DROPPABLE_ID = 'wall';
