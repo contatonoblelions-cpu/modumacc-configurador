@@ -145,8 +145,7 @@ function App() {
 
     const band = getModuleBand(data.moduleName);
     const { minY, maxY } = getBandYRange(band, room, heightCm);
-    const isMicro = /microondas/i.test(data.moduleName.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
-    const y = band === 'superior' && !isMicro ? minY : Math.min(maxY, Math.max(minY, rawY));
+    const y = Math.min(maxY, Math.max(minY, rawY));
 
     const others = modules
       .filter((m) => !(data.type === 'placed-module' && m.instanceId === data.instanceId))
