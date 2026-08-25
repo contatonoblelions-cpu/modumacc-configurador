@@ -43,8 +43,8 @@ function DraggableSink({ sink, scale, canvasHeight, counterRatio }: { sink: Sink
       {...listeners}
       {...attributes}
       style={{ left: sink.offsetXCm * scale, top: topPx, width: w, height: faucetH + bandH }}
-      className={`absolute z-0 touch-none cursor-grab transition active:cursor-grabbing ${
-        isDragging ? 'z-30 opacity-70' : ''
+      className={`absolute z-40 touch-none cursor-grab transition active:cursor-grabbing ${
+        isDragging ? 'z-40 opacity-70' : ''
       }`}
       title="Arraste para posicionar a pia"
     >
