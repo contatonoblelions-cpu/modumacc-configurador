@@ -18,7 +18,7 @@ export function ModulePanel() {
   const error = useConfiguratorStore((s) => s.catalogError);
 
   return (
-    <aside className="order-2 w-full shrink-0 border-t border-brand-silver-200 bg-brand-bg p-2 md:order-none md:w-72 md:overflow-y-auto md:border-t-0 md:border-b-0 md:border-r md:p-4">
+    <aside className="order-2 w-full flex-1 min-h-0 overflow-y-auto border-t border-brand-silver-200 bg-brand-bg p-2 md:order-none md:w-72 md:flex-none md:overflow-y-auto md:border-t-0 md:border-b-0 md:border-r md:p-4">
       <h2 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-silver-700 md:mb-3 md:text-sm">
         <span className="md:hidden">Módulos disponíveis — role e arraste para cima</span>
         <span className="hidden md:inline">Módulos disponíveis</span>
