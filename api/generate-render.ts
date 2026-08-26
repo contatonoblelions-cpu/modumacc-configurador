@@ -19,6 +19,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * nenhum problema de CORS a resolver.
  */
 
+/**
+ * Tempo maximo da funcao serverless na Vercel. A geracao de imagem do Gemini
+ * pode levar dezenas de segundos; sem isto a Vercel pode cortar cedo. 60s da
+ * folga; se o plano permitir menos, a Vercel limita ao maximo do plano.
+ */
+export const maxDuration = 60;
+
 const GEMINI_MODEL = 'gemini-2.5-flash-image';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
