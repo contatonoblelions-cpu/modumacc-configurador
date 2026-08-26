@@ -89,7 +89,7 @@ export interface CollageModuleInput {
 }
 
 export interface BuildCollageParams {
-  roomPreviewUrl: string;
+  roomPreviewUrl: string | null;
   roomWidthCm: number;
   roomHeightCm: number;
   finish: string | null;
@@ -108,20 +108,48 @@ export async function buildCollageDataUrl(
   params: BuildCollageParams,
 ): Promise<{ base64: string; mimeType: string } | null> {
   try {
-    const roomImg = await loadImage(params.roomPreviewUrl);
-    const W = roomImg.naturalWidth || 1200;
-    const H = roomImg.naturalHeight || 900;
     const canvas = document.createElement('canvas');
-    canvas.width = W;
-    canvas.height = H;
+    const ratio = params.roomHeightCm / params.roomWidthCm;
+    let W: number, H: number, frameX: number, frameY: number, frameW: number, frameH: number;
+
+    if (params.roomPreviewUrl) {
+      // Com foto do ambiente: desenha a foto e centraliza a composicao num quadro de 72%.
+      const roomImg = await loadImage(params.roomPreviewUrl);
+      W = roomImg.naturalWidth || 1200;
+      H = roomImg.naturalHeight || 900;
+      canvas.width = W;
+      canvas.height = H;
+      const c = canvas.getContext('2d');
+      if (!c) return null;
+      c.drawImage(roomImg, 0, 0, W, H);
+      frameW = W * 0.72;
+      frameH = frameW * ratio;
+      frameX = (W - frameW) / 2;
+      frameY = (H - frameH) / 2;
+    } else {
+      // SEM foto: monta um fundo neutro de estudio (parede + piso) na proporcao
+      // do ambiente, e a composicao ocupa o quadro inteiro. A IA depois
+      // transforma isso numa cena realista (a foto do ambiente e opcional).
+      W = 1200;
+      H = Math.max(300, Math.round(W * ratio));
+      canvas.width = W;
+      canvas.height = H;
+      const c = canvas.getContext('2d');
+      if (!c) return null;
+      const wall = c.createLinearGradient(0, 0, 0, H);
+      wall.addColorStop(0, '#eff2f3');
+      wall.addColorStop(1, '#dde3e5');
+      c.fillStyle = wall;
+      c.fillRect(0, 0, W, H);
+      c.fillStyle = '#cdbca0';
+      c.fillRect(0, Math.round(H * 0.9), W, Math.round(H * 0.1));
+      frameX = 0;
+      frameY = 0;
+      frameW = W;
+      frameH = H;
+    }
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
-    ctx.drawImage(roomImg, 0, 0, W, H);
-
-    const frameW = W * 0.72;
-    const frameH = frameW * (params.roomHeightCm / params.roomWidthCm);
-    const frameX = (W - frameW) / 2;
-    const frameY = (H - frameH) / 2;
 
     for (const m of params.modules) {
       const url = getModulePhoto(m.moduleName, params.finish, params.handle) ?? m.thumbnail;
