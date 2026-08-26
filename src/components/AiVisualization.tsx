@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { PhotoCollage } from './PhotoCollage';
+import { getFinishSwatch } from '../utils/finishSwatches';
+import { getHandleColor } from '../utils/handleColors';
 
 type Tab = 'collage' | 'ai';
 
@@ -22,6 +24,14 @@ export function AiVisualization() {
   const modules = useConfiguratorStore((s) => s.modules);
   const aiRender = useConfiguratorStore((s) => s.aiRender);
   const generateAiRender = useConfiguratorStore((s) => s.generateAiRender);
+  const catalog = useConfiguratorStore((s) => s.catalog);
+  const finish = useConfiguratorStore((s) => s.finish);
+  const handle = useConfiguratorStore((s) => s.handle);
+  const setFinish = useConfiguratorStore((s) => s.setFinish);
+  const setHandle = useConfiguratorStore((s) => s.setHandle);
+
+  const finishes = useMemo(() => [...new Set(catalog.flatMap((m) => m.availableFinishes))], [catalog]);
+  const handles = useMemo(() => [...new Set(catalog.flatMap((m) => m.availableHandles))], [catalog]);
 
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('ai');
@@ -163,6 +173,82 @@ export function AiVisualization() {
 
                 {aiRender.imageDataUrl && (
                   <div>
+                    {(finishes.length > 0 || handles.length > 0) && (
+                      <div className="mb-3 space-y-2 rounded-lg bg-brand-silver-100 p-3">
+                        <p className="text-xs font-medium text-brand-navy-900">
+                          Trocar cor ou puxador e gerar na hora:
+                        </p>
+                        {finishes.length > 0 && (
+                          <div>
+                            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-brand-silver-700">
+                              Cor: <span className="font-bold text-brand-navy-900">{finish ?? '—'}</span>
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {finishes.map((f) => {
+                                const swatch = getFinishSwatch(f);
+                                const selected = finish === f;
+                                return (
+                                  <button
+                                    key={f}
+                                    type="button"
+                                    title={f}
+                                    aria-label={f}
+                                    aria-pressed={selected}
+                                    disabled={aiRender.loading}
+                                    onClick={() => {
+                                      setFinish(f);
+                                      void generateAiRender();
+                                    }}
+                                    className={`h-8 w-8 shrink-0 rounded-full border bg-cover bg-center transition disabled:opacity-50 ${
+                                      selected
+                                        ? 'border-white ring-2 ring-brand-navy-800 ring-offset-1'
+                                        : 'border-brand-silver-300 hover:ring-2 hover:ring-brand-silver-400 hover:ring-offset-1'
+                                    }`}
+                                    style={swatch ? { backgroundImage: `url(${swatch})` } : { backgroundColor: '#d9d4c9' }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {handles.length > 0 && (
+                          <div>
+                            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-brand-silver-700">
+                              Puxador: <span className="font-bold text-brand-navy-900">{handle ?? '—'}</span>
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {handles.map((h) => {
+                                const color = getHandleColor(h);
+                                const selected = handle === h;
+                                return (
+                                  <button
+                                    key={h}
+                                    type="button"
+                                    title={h}
+                                    aria-label={h}
+                                    aria-pressed={selected}
+                                    disabled={aiRender.loading}
+                                    onClick={() => {
+                                      setHandle(h);
+                                      void generateAiRender();
+                                    }}
+                                    className={`flex h-8 items-center gap-1.5 rounded-full border pl-1 pr-2.5 transition disabled:opacity-50 ${
+                                      selected ? 'border-brand-navy-800 bg-white' : 'border-brand-silver-300 hover:border-brand-silver-400'
+                                    }`}
+                                  >
+                                    <span
+                                      className="h-6 w-6 shrink-0 rounded-full border border-black/10"
+                                      style={{ backgroundColor: color?.fill ?? '#c7cbce' }}
+                                    />
+                                    <span className="text-[11px] font-medium text-brand-navy-800">{h}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <img
                       src={aiRender.imageDataUrl}
                       alt="Visualização gerada com IA do ambiente com os móveis escolhidos"

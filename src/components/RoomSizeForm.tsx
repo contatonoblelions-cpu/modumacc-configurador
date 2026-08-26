@@ -1,6 +1,5 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useConfiguratorStore } from '../store/configuratorStore';
-import { resizeImageToBase64 } from '../utils/imageResize';
 
 /**
  * Tela de entrada: o cliente informa a largura e a altura do espaço disponível
@@ -9,8 +8,6 @@ import { resizeImageToBase64 } from '../utils/imageResize';
  */
 export function RoomSizeForm() {
   const setRoom = useConfiguratorStore((s) => s.setRoom);
-  const setRoomPhoto = useConfiguratorStore((s) => s.setRoomPhoto);
-  const roomPhoto = useConfiguratorStore((s) => s.roomPhoto);
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
   const [sinkWidth, setSinkWidth] = useState('');
@@ -21,23 +18,6 @@ export function RoomSizeForm() {
   const [stoveWidth, setStoveWidth] = useState('');
   const [stoveHeight, setStoveHeight] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [photoError, setPhotoError] = useState<string | null>(null);
-  const [processingPhoto, setProcessingPhoto] = useState(false);
-
-  async function handlePhotoChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoError(null);
-    setProcessingPhoto(true);
-    try {
-      const { base64, mimeType } = await resizeImageToBase64(file);
-      setRoomPhoto({ base64, mimeType, previewUrl: `data:${mimeType};base64,${base64}` });
-    } catch {
-      setPhotoError('Não foi possível processar essa imagem. Tente outra foto.');
-    } finally {
-      setProcessingPhoto(false);
-    }
-  }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -267,43 +247,6 @@ export function RoomSizeForm() {
               </div>
             </div>
           )}
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-brand-navy-800">
-            Foto do ambiente (opcional)
-          </label>
-          <p className="mb-2 text-xs text-brand-silver-600">
-            Envie uma foto do espaço onde vai colocar o móvel. Depois de montar
-            a composição, você pode gerar uma visualização com IA mostrando os
-            móveis já instalados nessa foto.
-          </p>
-          {roomPhoto ? (
-            <div className="flex items-center gap-3">
-              <img
-                src={roomPhoto.previewUrl}
-                alt="Prévia do ambiente"
-                className="h-16 w-16 rounded-lg object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => setRoomPhoto(null)}
-                className="text-sm text-brand-navy-700 underline"
-              >
-                Remover foto
-              </button>
-            </div>
-          ) : (
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              disabled={processingPhoto}
-              className="w-full text-sm text-brand-silver-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-navy-800 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-navy-900"
-            />
-          )}
-          {processingPhoto && <p className="mt-1 text-xs text-brand-silver-600">Processando foto...</p>}
-          {photoError && <p className="mt-1 text-sm text-red-600">{photoError}</p>}
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
