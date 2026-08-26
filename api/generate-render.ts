@@ -109,7 +109,7 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     'REGRAS OBRIGATÓRIAS — não quebre nenhuma:',
     '- NÃO mude a posição, o tamanho, a quantidade nem a ordem dos módulos. Eles devem permanecer EXATAMENTE onde estão na imagem.',
     '- NÃO troque, altere, escureça, clareie ou "corrija" as cores/acabamentos dos módulos, nem a cor do puxador. Use fielmente as cores que já estão na imagem.',
-    '- NÃO adicione móveis, armários, prateleiras, objetos, eletrodomésticos, plantas, decoração ou qualquer elemento que não esteja na montagem.',
+    '- NÃO adicione móveis, armários, prateleiras, objetos, plantas ou decoração que NÃO estejam na montagem. PORÉM, a montagem pode já conter uma geladeira, um fogão e uma pia com torneira sobre uma bancada de pedra — esses itens FAZEM PARTE da montagem e devem ser MANTIDOS e renderizados como aparelhos reais e fiéis (geladeira e fogão de inox/aço, bancada de pedra tipo granito/quartzo), no mesmo lugar, tamanho e proporção em que aparecem.',
     '- NÃO remova nenhum módulo presente na montagem.',
     '- NÃO altere a parede, o piso, as janelas, portas nem a perspectiva do ambiente original — apenas melhore a iluminação e a integração dos móveis já presentes.',
     '',
@@ -174,34 +174,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ];
     }
 
-    const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts }],
-      }),
-    });
+    // O Gemini as vezes devolve so texto (sem imagem) de forma intermitente.
+    // Tentamos ate 3 vezes antes de desistir — isso resolve o "gerou agora e
+    // depois nao gerou". Erros 4xx (prompt bloqueado etc) nao adianta repetir.
+    const callGemini = async () => {
+      const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts }] }),
+      });
+      if (!geminiRes.ok) {
+        const errText = await geminiRes.text();
+        return { retriable: geminiRes.status >= 500, error: `Gemini respondeu ${geminiRes.status}: ${errText.slice(0, 300)}`, imagePart: undefined as undefined | { inlineData?: { data?: string; mimeType?: string } } };
+      }
+      const data = await geminiRes.json();
+      const imagePart = data?.candidates?.[0]?.content?.parts?.find(
+        (p: { inlineData?: { data?: string } }) => p.inlineData?.data,
+      ) as { inlineData?: { data?: string; mimeType?: string } } | undefined;
+      return { retriable: true, error: 'O Gemini não devolveu uma imagem. Tente novamente.', imagePart };
+    };
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      res.status(502).json({ error: `Gemini respondeu ${geminiRes.status}: ${errText.slice(0, 300)}` });
-      return;
+    let lastError = 'O Gemini não devolveu uma imagem. Tente novamente.';
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const r = await callGemini();
+      if (r.imagePart?.inlineData?.data) {
+        res.status(200).json({
+          imageBase64: r.imagePart.inlineData.data,
+          mimeType: r.imagePart.inlineData.mimeType ?? 'image/png',
+        });
+        return;
+      }
+      lastError = r.error;
+      if (!r.retriable) break;
     }
-
-    const data = await geminiRes.json();
-    const imagePart = data?.candidates?.[0]?.content?.parts?.find(
-      (p: { inlineData?: { data?: string } }) => p.inlineData?.data,
-    );
-
-    if (!imagePart?.inlineData?.data) {
-      res.status(502).json({ error: 'O Gemini não devolveu uma imagem. Tente novamente.' });
-      return;
-    }
-
-    res.status(200).json({
-      imageBase64: imagePart.inlineData.data,
-      mimeType: imagePart.inlineData.mimeType ?? 'image/png',
-    });
+    res.status(502).json({ error: lastError });
   } catch (err) {
     res.status(500).json({
       error: err instanceof Error ? err.message : 'Erro inesperado gerando a visualização.',
