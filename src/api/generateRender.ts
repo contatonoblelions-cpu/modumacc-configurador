@@ -95,6 +95,10 @@ export interface BuildCollageParams {
   finish: string | null;
   handle: string | null;
   modules: CollageModuleInput[];
+  fridge?: { offsetXCm: number; widthCm: number; heightCm: number } | null;
+  stove?: { offsetXCm: number; widthCm: number; heightCm: number } | null;
+  sink?: { offsetXCm: number; widthCm: number } | null;
+  countertopRatio?: number;
 }
 
 /**
@@ -151,6 +155,18 @@ export async function buildCollageDataUrl(
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
+    // Geladeira e fogao (referencia visual) ancorados no chao, ATRAS dos modulos.
+    const drawFloorPhoto = async (url: string, offsetXCm: number, wCm: number, hCm: number) => {
+      const img = await loadImage(url);
+      const x = frameX + (offsetXCm / params.roomWidthCm) * frameW;
+      const w = (wCm / params.roomWidthCm) * frameW;
+      const h = (hCm / params.roomHeightCm) * frameH;
+      const y = frameY + frameH - h;
+      ctx.drawImage(img, x, y, w, h);
+    };
+    if (params.fridge) await drawFloorPhoto('/modules/geladeira.jpg', params.fridge.offsetXCm, params.fridge.widthCm, params.fridge.heightCm);
+    if (params.stove) await drawFloorPhoto('/modules/fogao.jpg', params.stove.offsetXCm, params.stove.widthCm, params.stove.heightCm);
+
     for (const m of params.modules) {
       const url = getModulePhoto(m.moduleName, params.finish, params.handle) ?? m.thumbnail;
       if (!url) continue;
@@ -160,6 +176,33 @@ export async function buildCollageDataUrl(
       const w = (m.widthCm / params.roomWidthCm) * frameW;
       const h = (m.heightCm / params.roomHeightCm) * frameH;
       ctx.drawImage(img, x, y, w, h);
+    }
+
+    // Pia: bancada de pedra + torneira, por cima dos modulos (se houver pia).
+    if (params.sink && params.countertopRatio) {
+      const lineY = frameY + params.countertopRatio * frameH;
+      const sw = (params.sink.widthCm / params.roomWidthCm) * frameW;
+      const sx = frameX + (params.sink.offsetXCm / params.roomWidthCm) * frameW;
+      const stoneH = Math.max(6, frameH * 0.045);
+      const faucetH = Math.max(14, frameH * 0.11);
+      const stone = ctx.createLinearGradient(0, lineY, 0, lineY + stoneH);
+      stone.addColorStop(0, '#3a3f44');
+      stone.addColorStop(0.5, '#23272b');
+      stone.addColorStop(1, '#15181b');
+      ctx.fillStyle = stone;
+      ctx.fillRect(sx, lineY, sw, stoneH);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(sx, lineY, sw, Math.max(1, stoneH * 0.12));
+      const fw = Math.max(5, sw * 0.06);
+      const fx = sx + sw / 2 - fw / 2;
+      const fy = lineY - faucetH;
+      const metal = ctx.createLinearGradient(fx, 0, fx + fw, 0);
+      metal.addColorStop(0, '#8a929a');
+      metal.addColorStop(0.5, '#c8cfd5');
+      metal.addColorStop(1, '#7d858c');
+      ctx.fillStyle = metal;
+      ctx.fillRect(fx, fy, fw, faucetH);
+      ctx.fillRect(fx, fy, Math.max(fw, sw * 0.16), fw);
     }
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
