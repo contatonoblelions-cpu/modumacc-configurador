@@ -3,6 +3,9 @@ import { ModulePhoto, hasModulePhoto } from './ModulePhoto';
 import { ModuleSchematic } from './ModuleSchematic';
 import { getFinishSwatch } from '../utils/finishSwatches';
 import { getHandleColor } from '../utils/handleColors';
+import { getCountertopRatio } from '../utils/bands';
+import { FRIDGE_PHOTO } from '../utils/fridge';
+import { STOVE_PHOTO } from '../utils/stove';
 
 /**
  * Colagem PRECISA — cola as fotos reais dos módulos (já na cor certa,
@@ -28,8 +31,12 @@ export function PhotoCollage() {
   const finishImageUrl = getFinishSwatch(finish);
   const handle = useConfiguratorStore((s) => s.handle);
   const handleColor = getHandleColor(handle);
+  const sink = useConfiguratorStore((s) => s.sink);
+  const fridge = useConfiguratorStore((s) => s.fridge);
+  const stove = useConfiguratorStore((s) => s.stove);
 
   if (!room) return null;
+  const counterRatio = getCountertopRatio(room);
   const hasPhoto = Boolean(roomPhoto);
 
   return (
@@ -65,6 +72,32 @@ export function PhotoCollage() {
           style={hasPhoto ? { width: '72%', aspectRatio: `${room.widthCm} / ${room.heightCm}` } : undefined}
         >
           <div className="relative h-full w-full drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
+            {fridge && (
+              <img
+                src={FRIDGE_PHOTO}
+                alt="Geladeira (referência)"
+                className="absolute z-0 object-fill"
+                style={{
+                  left: `${(fridge.offsetXCm / room.widthCm) * 100}%`,
+                  bottom: 0,
+                  width: `${(fridge.widthCm / room.widthCm) * 100}%`,
+                  height: `${(fridge.heightCm / room.heightCm) * 100}%`,
+                }}
+              />
+            )}
+            {stove && (
+              <img
+                src={STOVE_PHOTO}
+                alt="Fogão (referência)"
+                className="absolute z-0 object-fill"
+                style={{
+                  left: `${(stove.offsetXCm / room.widthCm) * 100}%`,
+                  bottom: 0,
+                  width: `${(stove.widthCm / room.widthCm) * 100}%`,
+                  height: `${(stove.heightCm / room.heightCm) * 100}%`,
+                }}
+              />
+            )}
             {modules.map((m) => {
               const left = (m.offsetXCm / room.widthCm) * 100;
               const top = (m.offsetYCm / room.heightCm) * 100;
@@ -96,6 +129,39 @@ export function PhotoCollage() {
                 </div>
               );
             })}
+            {sink && (
+              <div
+                className="absolute z-30"
+                style={{
+                  left: `${(sink.offsetXCm / room.widthCm) * 100}%`,
+                  top: `${counterRatio * 100}%`,
+                  width: `${(sink.widthCm / room.widthCm) * 100}%`,
+                  height: '9%',
+                }}
+              >
+                <div
+                  className="absolute"
+                  style={{
+                    left: '46%',
+                    bottom: '55%',
+                    width: '6%',
+                    height: '85%',
+                    background: 'linear-gradient(90deg, #8a929a, #c8cfd5, #7d858c)',
+                    borderRadius: 2,
+                  }}
+                />
+                <div
+                  className="absolute inset-x-0"
+                  style={{
+                    top: '55%',
+                    height: '30%',
+                    background: 'linear-gradient(180deg, #3a3f44 0%, #23272b 55%, #15181b 100%)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)',
+                    borderRadius: 2,
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
