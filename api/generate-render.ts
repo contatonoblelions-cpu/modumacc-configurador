@@ -101,6 +101,15 @@ function buildPrompt(body: GenerateRenderBody): string {
  * realista, sem mudar posição, cor, quantidade ou inventar nada.
  */
 function buildStrictPrompt(body: GenerateRenderBody): string {
+  // Instrucao FORTE e explicita sobre o metal do puxador — a IA tende a
+  // "limpar" esse detalhe pequeno e devolver um puxador generico/prateado,
+  // entao nomeamos a cor do metal pra ela manter fiel (aluminio vs bronze).
+  const handleInstr =
+    body.handle === 'Bronze'
+      ? 'ATENÇÃO AOS PUXADORES: eles são de metal BRONZE/DOURADO (tom âmbar dourado escuro, acetinado). Renderize TODOS os puxadores exatamente nesse tom bronze/dourado, com leve brilho metálico — NUNCA prateados, cromados ou de alumínio.'
+      : body.handle === 'Alumínio'
+        ? 'ATENÇÃO AOS PUXADORES: eles são de ALUMÍNIO escovado (prata metálica fosca). Renderize TODOS os puxadores nesse tom prata/alumínio escovado — NUNCA dourados ou bronze.'
+        : '';
   return [
     'Você é um renderizador fotorrealista para uma loja de móveis planejados.',
     'A imagem enviada é a MONTAGEM EXATA feita pelo cliente: a foto real do ambiente dele com as fotos reais dos módulos de marcenaria já recortados e posicionados nos lugares, tamanhos e cores exatos que ele escolheu.',
@@ -108,13 +117,15 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     '',
     'REGRAS OBRIGATÓRIAS — não quebre nenhuma:',
     '- NÃO mude a posição, o tamanho, a quantidade nem a ordem dos módulos. Eles devem permanecer EXATAMENTE onde estão na imagem.',
-    '- NÃO troque, altere, escureça, clareie ou "corrija" as cores/acabamentos dos módulos, nem a cor do puxador. Use fielmente as cores que já estão na imagem.',
+    '- NÃO troque, altere, escureça, clareie ou "corrija" as cores/acabamentos dos módulos. Use fielmente as cores que já estão na imagem.',
+    '- MANTENHA o acabamento EXATO dos puxadores (alumínio prata OU bronze dourado, conforme indicado abaixo). Este é um erro comum: não transforme puxador bronze em prateado nem vice-versa.',
     '- NÃO adicione móveis, armários, prateleiras, objetos, plantas ou decoração que NÃO estejam na montagem. PORÉM, a montagem pode já conter uma geladeira, um fogão e uma pia com torneira sobre uma bancada de pedra — esses itens FAZEM PARTE da montagem e devem ser MANTIDOS e renderizados como aparelhos reais e fiéis (geladeira e fogão de inox/aço, bancada de pedra tipo granito/quartzo), no mesmo lugar, tamanho e proporção em que aparecem.',
     '- NÃO remova nenhum módulo presente na montagem.',
     '- NÃO altere a parede, o piso, as janelas, portas nem a perspectiva do ambiente original — apenas melhore a iluminação e a integração dos móveis já presentes.',
     '',
     body.finish ? `Acabamento/cor dos módulos (apenas para referência, já aplicado na imagem): ${body.finish}.` : '',
-    body.handle ? `Acabamento do puxador (já aplicado na imagem): ${body.handle}.` : '',
+    body.handle ? `Acabamento do puxador escolhido pelo cliente: ${body.handle}.` : '',
+    handleInstr,
     body.roomWidthCm && body.roomHeightCm ? `Espaço do cliente: ${body.roomWidthCm}cm de largura por ${body.roomHeightCm}cm de altura.` : '',
     '',
     'O resultado deve ser indistinguível de uma fotografia real da cozinha do cliente já instalada, mantendo 100% de fidelidade à montagem enviada — mesmos módulos, mesmas posições, mesmas cores.',
