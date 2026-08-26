@@ -19,7 +19,6 @@ type Tab = 'collage' | 'ai';
  *    versão com IA, ou caso a IA demore/erre.
  */
 export function AiVisualization() {
-  const roomPhoto = useConfiguratorStore((s) => s.roomPhoto);
   const modules = useConfiguratorStore((s) => s.modules);
   const aiRender = useConfiguratorStore((s) => s.aiRender);
   const generateAiRender = useConfiguratorStore((s) => s.generateAiRender);
@@ -27,7 +26,8 @@ export function AiVisualization() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('ai');
 
-  const canOpen = Boolean(roomPhoto) && modules.length > 0;
+  // A foto do ambiente e OPCIONAL — basta ter ao menos um modulo montado.
+  const canOpen = modules.length > 0;
 
   function openModal() {
     setTab('ai');
@@ -48,8 +48,8 @@ export function AiVisualization() {
         onClick={openModal}
         disabled={!canOpen}
         title={
-          !roomPhoto
-            ? 'Envie uma foto do ambiente na tela de medidas pra usar essa função'
+          modules.length === 0
+            ? 'Adicione ao menos um módulo na parede pra visualizar'
             : undefined
         }
         className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-accent-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-brand-accent-800 disabled:cursor-not-allowed disabled:bg-brand-silver-400 sm:flex-none sm:px-4 sm:py-3 sm:text-base"
@@ -134,8 +134,9 @@ export function AiVisualization() {
                 {!aiRender.loading && !aiRender.imageDataUrl && !aiRender.error && (
                   <div className="flex flex-col items-center gap-3 py-10 text-center">
                     <p className="text-sm text-brand-silver-600">
-                      Gera uma versão realista, com luz e sombra, recriada por IA a partir da sua foto —
-                      já usando o acabamento, o puxador e os módulos exatos que você escolheu.
+                      Gera uma versão realista, com luz e sombra, usando o acabamento, o puxador e os
+                      módulos exatos que você escolheu. Se você enviou uma foto do ambiente, a IA usa
+                      ela de fundo; se não, monta a cozinha num cenário limpo.
                     </p>
                     <button
                       type="button"

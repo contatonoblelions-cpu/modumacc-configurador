@@ -29,12 +29,24 @@ export function PhotoCollage() {
   const handle = useConfiguratorStore((s) => s.handle);
   const handleColor = getHandleColor(handle);
 
-  if (!roomPhoto || !room) return null;
+  if (!room) return null;
+  const hasPhoto = Boolean(roomPhoto);
 
   return (
     <div>
       <div className="relative w-full overflow-hidden rounded-lg bg-brand-silver-100">
-        <img src={roomPhoto.previewUrl} alt="Foto do ambiente enviada" className="block w-full" />
+        {hasPhoto ? (
+          <img src={roomPhoto!.previewUrl} alt="Foto do ambiente enviada" className="block w-full" />
+        ) : (
+          <div
+            className="w-full"
+            style={{
+              aspectRatio: `${room.widthCm} / ${room.heightCm}`,
+              backgroundImage:
+                'linear-gradient(180deg, #eff2f3 0%, #dde3e5 88%, #cdbca0 88%, #cdbca0 100%)',
+            }}
+          />
+        )}
 
         {/*
           Quadro com a composição montada, centralizado por cima da foto na
@@ -45,11 +57,12 @@ export function PhotoCollage() {
           pra caber em cima de qualquer foto.
         */}
         <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{
-            width: '72%',
-            aspectRatio: `${room.widthCm} / ${room.heightCm}`,
-          }}
+          className={
+            hasPhoto
+              ? 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'
+              : 'absolute inset-0'
+          }
+          style={hasPhoto ? { width: '72%', aspectRatio: `${room.widthCm} / ${room.heightCm}` } : undefined}
         >
           <div className="relative h-full w-full drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
             {modules.map((m) => {
@@ -88,7 +101,9 @@ export function PhotoCollage() {
       </div>
 
       <p className="mt-2 text-xs text-brand-silver-600">
-        Posição aproximada, centralizada sobre a foto — sem IA, é a colagem exata do que você montou.
+        {hasPhoto
+          ? 'Posição aproximada, centralizada sobre a foto — sem IA, é a colagem exata do que você montou.'
+          : 'Prévia da composição num cenário neutro — sem IA, é a colagem exata do que você montou.'}{' '}
         Pra um render realista com luz e sombra, use "Refinar com IA" abaixo.
       </p>
     </div>
