@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { PhotoCollage } from './PhotoCollage';
 import { getFinishSwatch } from '../utils/finishSwatches';
@@ -82,9 +83,9 @@ export function AiVisualization() {
         Visualizar em 3D
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
           onClick={closeModal}
         >
           <div
@@ -269,7 +270,8 @@ export function AiVisualization() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
