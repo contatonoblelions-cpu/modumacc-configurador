@@ -86,7 +86,7 @@ export function AiVisualization() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="text-brand-silver-600 hover:text-brand-navy-900"
+                className="rounded-lg bg-brand-navy-800 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-900"
               >
                 Fechar
               </button>

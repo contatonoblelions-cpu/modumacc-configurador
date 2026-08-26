@@ -23,7 +23,7 @@ export function Header() {
         {step === 'build' && (
           <button
             onClick={backToRoomStep}
-            className="text-sm font-medium text-brand-navy-700 hover:text-brand-navy-900"
+            className="rounded-lg bg-brand-navy-800 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-900"
           >
             ← Alterar medidas
           </button>
@@ -31,7 +31,7 @@ export function Header() {
         {step === 'review' && (
           <button
             onClick={backToBuildStep}
-            className="text-sm font-medium text-brand-navy-700 hover:text-brand-navy-900"
+            className="rounded-lg bg-brand-navy-800 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-900"
           >
             ← Voltar aos módulos
           </button>
