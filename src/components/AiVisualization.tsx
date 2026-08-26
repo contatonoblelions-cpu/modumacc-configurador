@@ -120,7 +120,7 @@ export function AiVisualization() {
                   type="button"
                   onClick={() => {
                     setTab('ai');
-                    if (!aiRender.imageDataUrl && !aiRender.loading) void generateAiRender();
+                    if (!aiRender.loading) void generateAiRender();
                   }}
                   className="mt-3 w-full rounded-lg bg-brand-accent-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-accent-800"
                 >
@@ -162,11 +162,23 @@ export function AiVisualization() {
                 )}
 
                 {aiRender.imageDataUrl && (
-                  <img
-                    src={aiRender.imageDataUrl}
-                    alt="Visualização gerada com IA do ambiente com os móveis escolhidos"
-                    className="w-full rounded-lg"
-                  />
+                  <div>
+                    <img
+                      src={aiRender.imageDataUrl}
+                      alt="Visualização gerada com IA do ambiente com os móveis escolhidos"
+                      className="w-full rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void generateAiRender()}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-navy-800 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-900"
+                    >
+                      <span aria-hidden="true">↻</span> Gerar novamente
+                    </button>
+                    <p className="mt-1.5 text-center text-xs text-brand-silver-600">
+                      Mudou a montagem? Clique aqui pra gerar um novo 3D do zero.
+                    </p>
+                  </div>
                 )}
               </div>
             )}
