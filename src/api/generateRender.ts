@@ -134,7 +134,7 @@ export async function buildCollageDataUrl(
       // SEM foto: monta um fundo neutro de estudio (parede + piso) na proporcao
       // do ambiente, e a composicao ocupa o quadro inteiro. A IA depois
       // transforma isso numa cena realista (a foto do ambiente e opcional).
-      W = 1200;
+      W = 1600;
       H = Math.max(300, Math.round(W * ratio));
       canvas.width = W;
       canvas.height = H;
