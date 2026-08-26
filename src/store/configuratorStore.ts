@@ -361,12 +361,13 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
 
     generateAiRender: async () => {
           const { roomPhoto, room, modules, finish, handle } = get();
-          if (!roomPhoto || !room || modules.length === 0) return;
+          // A foto do ambiente e OPCIONAL: sem ela, geramos sobre um fundo neutro.
+          if (!room || modules.length === 0) return;
 
       set({ aiRender: { loading: true, imageDataUrl: null, error: null } });
           try {
                   const collage = await buildCollageDataUrl({
-                            roomPreviewUrl: roomPhoto.previewUrl,
+                            roomPreviewUrl: roomPhoto?.previewUrl ?? null,
                             roomWidthCm: room.widthCm,
                             roomHeightCm: room.heightCm,
                             finish,
@@ -381,8 +382,8 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                             })),
                   });
                   const result = await generateRender({
-                            roomPhotoBase64: roomPhoto.base64,
-                            roomPhotoMimeType: roomPhoto.mimeType,
+                            roomPhotoBase64: roomPhoto?.base64 ?? '',
+                            roomPhotoMimeType: roomPhoto?.mimeType ?? 'image/jpeg',
                             roomWidthCm: room.widthCm,
                             roomHeightCm: room.heightCm,
                             finish,
