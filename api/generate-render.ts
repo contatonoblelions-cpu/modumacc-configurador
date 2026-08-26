@@ -110,16 +110,23 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
       : body.handle === 'Alumínio'
         ? 'ATENÇÃO AOS PUXADORES: eles são de ALUMÍNIO escovado (prata metálica fosca). Renderize TODOS os puxadores nesse tom prata/alumínio escovado — NUNCA dourados ou bronze.'
         : '';
+  const lista = body.modules
+    .map((m, i) => `${i + 1}. ${m.name} (${m.widthCm}x${m.heightCm}cm)`)
+    .join('; ');
+  const n = body.modules.length;
   return [
     'Você é um renderizador fotorrealista para uma loja de móveis planejados.',
     'A imagem enviada é a MONTAGEM EXATA feita pelo cliente: a foto/base do ambiente com as fotos reais dos módulos de marcenaria já recortados e posicionados nos lugares, tamanhos e cores exatos que ele escolheu.',
     'IMPORTANTE: trate a imagem como uma FOTOGRAFIA que precisa apenas de RETOQUE (relight). Sua tarefa NÃO é recriar, redesenhar nem reorganizar a cozinha — é apenas melhorar iluminação, sombras e integração dos elementos que JÁ estão na imagem, mantendo tudo exatamente onde e como está.',
     'Sua ÚNICA tarefa é transformar essa montagem numa fotografia realista e integrada: adicione iluminação natural coerente, sombras de contato suaves entre os móveis, a parede e o piso, e integre os móveis à cena para não parecerem colados/recortados — SEM mover, redimensionar, substituir ou reinterpretar nenhum módulo.',
     '',
+    `A montagem contém EXATAMENTE ${n} módulo(s) de marcenaria, nesta ordem: ${lista}.`,
+    `O resultado FINAL deve conter exatamente esses ${n} módulo(s) — nunca crie um módulo/armário a mais, nunca remova nenhum, nunca junte dois em um.`,
     'REGRAS OBRIGATÓRIAS — não quebre nenhuma:',
     '- NÃO mude a posição, o tamanho, a quantidade nem a ordem dos módulos. Eles devem permanecer EXATAMENTE onde estão na imagem, na mesma grade/alinhamento.',
     '- NÃO altere o DESENHO de cada módulo: mantenha o mesmo número e tipo de portas, gavetas, nichos e frentes que aparecem em cada módulo da imagem. Não troque uma gaveta por porta, não junte módulos, não invente prateleiras.',
     '- NÃO deixe espaços vazios onde há módulo, nem preencha com armário genérico onde não há. Copie fielmente a composição da imagem.',
+    '- NÃO invente armários superiores, prateleiras, nichos ou módulos que NÃO apareçam na imagem. Onde a parede estiver vazia (sem módulo), MANTENHA a parede vazia — não preencha com armário nenhum.',
     '- NÃO troque, altere, escureça, clareie ou "corrija" as cores/acabamentos dos módulos. Use fielmente as cores que já estão na imagem.',
     '- MANTENHA o acabamento EXATO dos puxadores (alumínio prata OU bronze dourado, conforme indicado abaixo). Este é um erro comum: não transforme puxador bronze em prateado nem vice-versa.',
     '- NÃO adicione móveis, armários, prateleiras, objetos, plantas ou decoração que NÃO estejam na montagem. PORÉM, a montagem pode já conter uma geladeira, um fogão e uma pia com torneira sobre uma bancada de pedra — esses itens FAZEM PARTE da montagem e devem ser MANTIDOS e renderizados como aparelhos reais e fiéis (geladeira e fogão de inox/aço, bancada de pedra tipo granito/quartzo), no mesmo lugar, tamanho e proporção em que aparecem.',
@@ -200,7 +207,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // Temperatura baixa = maxima fidelidade a imagem de entrada (a IA
           // reorganizava/redesenhava os modulos com temperatura alta). Aqui
           // queremos edicao/retoque da colagem, nao recriacao criativa.
-          generationConfig: { temperature: 0.05 },
+          generationConfig: { temperature: 0 },
         }),
       });
       if (!geminiRes.ok) {
