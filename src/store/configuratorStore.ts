@@ -4,7 +4,7 @@ import type { PlacedModule, RoomDimensions, SinkFixture, FridgeFixture, StoveFix
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { buildCollageDataUrl, buildRenderModules, generateRender } from '../api/generateRender';
 import { resolvePositionCm, packedPositionCm, snapPositionCm } from '../utils/placement';
-import { getModuleBand, getBandYRange } from '../utils/bands';
+import { getModuleBand, getBandYRange, getCountertopRatio } from '../utils/bands';
 import { FRIDGE_WIDTH_CM, FRIDGE_HEIGHT_CM } from '../utils/fridge';
 import { STOVE_WIDTH_CM, STOVE_HEIGHT_CM } from '../utils/stove';
 
@@ -360,7 +360,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     },
 
     generateAiRender: async () => {
-          const { roomPhoto, room, modules, finish, handle } = get();
+          const { roomPhoto, room, modules, finish, handle, sink, fridge, stove } = get();
           // A foto do ambiente e OPCIONAL: sem ela, geramos sobre um fundo neutro.
           if (!room || modules.length === 0) return;
 
@@ -380,6 +380,10 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                                         offsetXCm: m.offsetXCm,
                                         offsetYCm: m.offsetYCm,
                             })),
+                            fridge: fridge ? { offsetXCm: fridge.offsetXCm, widthCm: fridge.widthCm, heightCm: fridge.heightCm } : null,
+                            stove: stove ? { offsetXCm: stove.offsetXCm, widthCm: stove.widthCm, heightCm: stove.heightCm } : null,
+                            sink: sink ? { offsetXCm: sink.offsetXCm, widthCm: sink.widthCm } : null,
+                            countertopRatio: getCountertopRatio(room),
                   });
                   const result = await generateRender({
                             roomPhotoBase64: roomPhoto?.base64 ?? '',
