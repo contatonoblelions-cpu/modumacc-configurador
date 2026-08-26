@@ -540,7 +540,7 @@ export function BuildCanvas() {
           height: canvasHeight,
           backgroundImage: 'linear-gradient(180deg, #fbf9f6 0%, #f4efe6 88%, #ece2cf 100%)',
         }}
-        className="relative max-w-full overflow-hidden rounded-xl border border-brand-silver-200 md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
+        className="relative overflow-hidden rounded-xl border border-brand-silver-200 md:rounded-lg md:border-2 md:border-dashed md:border-brand-silver-300"
       >
         <div
           aria-hidden="true"
