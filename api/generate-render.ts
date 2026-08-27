@@ -133,6 +133,7 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     '⛔ PROIBIÇÕES ABSOLUTAS — se você quebrar QUALQUER uma, o resultado é INVÁLIDO e será descartado:',
     '1) PROIBIDO adicionar qualquer módulo, armário, prateleira, nicho, gaveta ou porta que NÃO esteja na imagem.',
     '2) PROIBIDO remover, ocultar ou mesclar qualquer módulo que ESTEJA na imagem.',
+    '2b) PROIBIDO omitir módulos ISOLADOS ou nas EXTREMIDADES da parede (cantos, pontas, módulos afastados dos demais). Todo módulo visível na imagem, mesmo sozinho num canto, DEVE aparecer no resultado.',
     '3) PROIBIDO mover, redimensionar, reordenar ou redesenhar os módulos — cada um fica no mesmo lugar, tamanho e formato.',
     '4) PROIBIDO trocar a cor/acabamento dos módulos ou a cor do puxador (alumínio prata vs bronze dourado).',
     '5) PROIBIDO preencher parede vazia com armário — parede sem módulo permanece parede vazia.',
