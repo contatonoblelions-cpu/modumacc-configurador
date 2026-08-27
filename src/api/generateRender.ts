@@ -177,6 +177,13 @@ export async function buildCollageDataUrl(
       const h = (m.heightCm / params.roomHeightCm) * frameH;
       ctx.drawImage(img, x, y, w, h);
 
+      // Contorno sutil em TODO modulo: delimita cada peca (a IA passa a
+      // enxergar cada modulo como um objeto separado -> nao omite os isolados
+      // nas pontas) e ainda fica realista, como a juncao real entre modulos.
+      ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+      ctx.lineWidth = Math.max(1, w * 0.006);
+      ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+
       // REFORCO DE GAVETEIRO: as fotos de gaveta tem divisorias sutis que a IA
       // as vezes le como nicho/prateleira aberta. Aqui desenhamos por cima
       // linhas de divisao fortes + barras de puxador (na cor escolhida).
