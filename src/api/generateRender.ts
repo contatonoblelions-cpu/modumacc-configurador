@@ -176,6 +176,38 @@ export async function buildCollageDataUrl(
       const w = (m.widthCm / params.roomWidthCm) * frameW;
       const h = (m.heightCm / params.roomHeightCm) * frameH;
       ctx.drawImage(img, x, y, w, h);
+
+      // REFORCO DE GAVETEIRO: as fotos de gaveta tem divisorias sutis que a IA
+      // as vezes le como nicho/prateleira aberta. Aqui desenhamos por cima
+      // linhas de divisao fortes + barras de puxador (na cor escolhida).
+      const gv = m.moduleName.toLowerCase().match(/(\d+)\s*gavetas?/);
+      if (gv || m.moduleName.toLowerCase().includes('gaveta')) {
+        const count = gv ? Math.max(1, parseInt(gv[1], 10)) : 2;
+        const isBronze = params.handle === 'Bronze';
+        const metalA = isBronze ? '#b98a45' : '#d3d7da';
+        const metalB = isBronze ? '#7e5a2b' : '#9aa0a5';
+        const drawerH = h / count;
+        ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+        ctx.lineWidth = Math.max(1, w * 0.012);
+        ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+        for (let k = 0; k < count; k++) {
+          const dy = y + k * drawerH;
+          if (k > 0) {
+            ctx.strokeStyle = 'rgba(0,0,0,0.42)';
+            ctx.lineWidth = Math.max(1.5, h * 0.006);
+            ctx.beginPath(); ctx.moveTo(x, dy); ctx.lineTo(x + w, dy); ctx.stroke();
+          }
+          const bw = w * 0.44;
+          const bh = Math.max(2, drawerH * 0.09);
+          const bx = x + (w - bw) / 2;
+          const by = dy + drawerH * 0.16;
+          const grad = ctx.createLinearGradient(0, by, 0, by + bh);
+          grad.addColorStop(0, metalA);
+          grad.addColorStop(1, metalB);
+          ctx.fillStyle = grad;
+          ctx.fillRect(bx, by, bw, bh);
+        }
+      }
     }
 
     // Pia: bancada de pedra + torneira, por cima dos modulos (se houver pia).
