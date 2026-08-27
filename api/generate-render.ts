@@ -110,6 +110,20 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
       : body.handle === 'Alumínio'
         ? 'ATENÇÃO AOS PUXADORES: eles são de ALUMÍNIO escovado (prata metálica fosca). Renderize TODOS os puxadores nesse tom prata/alumínio escovado — NUNCA dourados ou bronze.'
         : '';
+  const tipoDe = (nome: string): string => {
+    const nn = nome.toLowerCase();
+    const g = nn.match(/(\d+)\s*gavetas?/);
+    if (g || nn.includes('gaveta')) return ` [GAVETEIRO: ${g ? g[1] : ''} gavetas horizontais empilhadas, cada uma com puxador horizontal]`;
+    if (nn.includes('nicho') || nn.includes('basculante')) return ' [armario/nicho de frente fechada]';
+    const pt = nn.match(/(\d+)\s*portas?/);
+    if (pt || nn.includes('porta')) return ` [${pt ? pt[1] : '1'} porta(s) vertical(is)]`;
+    return '';
+  };
+  const lista = body.modules
+    .map((m, i) => `${i + 1}. ${m.name} (${m.widthCm}x${m.heightCm}cm)${tipoDe(m.name)}`)
+    .join('; ');
+  const nModulos = body.modules.length;
+  const temGaveteiro = body.modules.some((m) => /gavet/i.test(m.name));
   return [
     'Você é um renderizador fotorrealista para uma loja de móveis planejados.',
     'A imagem enviada é a MONTAGEM EXATA feita pelo cliente: a foto/base do ambiente com as fotos reais dos módulos de marcenaria já recortados e posicionados nos lugares, tamanhos e cores exatos que ele escolheu.',
@@ -125,9 +139,12 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     '6) PROIBIDO inventar eletrodomésticos, decoração, objetos ou móveis que não estejam na imagem.',
     '',
     '',
+    `A montagem contém EXATAMENTE ${nModulos} módulo(s), nesta ordem: ${lista}.`,
+    `O resultado FINAL deve conter exatamente esses ${nModulos} módulo(s), cada um do MESMO tipo indicado (gaveteiro continua gaveteiro, porta continua porta) — nunca crie um a mais, nunca remova, nunca converta um tipo em outro.`,
     'REGRAS OBRIGATÓRIAS — não quebre nenhuma:',
     '- NÃO mude a posição, o tamanho, a quantidade nem a ordem dos módulos. Eles devem permanecer EXATAMENTE onde estão na imagem, na mesma grade/alinhamento.',
     '- NÃO altere o DESENHO de cada módulo: mantenha o mesmo número e tipo de portas, gavetas, nichos e frentes que aparecem em cada módulo da imagem. Não troque uma gaveta por porta, não junte módulos, não invente prateleiras.',
+    '- GAVETEIRO É GAVETEIRO: qualquer módulo com gavetas horizontais empilhadas (2 gavetas, 3 gavetas etc.) DEVE permanecer com o MESMO número de gavetas horizontais e seus puxadores horizontais. JAMAIS transforme um gaveteiro numa porta inteiriça, nunca apague as divisórias entre as gavetas nem mude a quantidade delas.',
     '- NÃO deixe espaços vazios onde há módulo, nem preencha com armário genérico onde não há. Copie fielmente a composição da imagem.',
     '- NÃO troque, altere, escureça, clareie ou "corrija" as cores/acabamentos dos módulos. Use fielmente as cores que já estão na imagem.',
     '- MANTENHA o acabamento EXATO dos puxadores (alumínio prata OU bronze dourado, conforme indicado abaixo). Este é um erro comum: não transforme puxador bronze em prateado nem vice-versa.',
@@ -138,6 +155,9 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     body.finish ? `Acabamento/cor dos módulos (apenas para referência, já aplicado na imagem): ${body.finish}.` : '',
     body.handle ? `Acabamento do puxador escolhido pelo cliente: ${body.handle}.` : '',
     handleInstr,
+    temGaveteiro
+      ? 'ATENÇÃO AOS GAVETEIROS: os módulos marcados como GAVETEIRO têm frentes horizontais empilhadas (gavetas), cada uma com um puxador horizontal. Mantenha EXATAMENTE o número de gavetas que aparece na imagem, com as divisórias horizontais bem visíveis. NUNCA transforme um gaveteiro em porta, nunca mude o número de gavetas.'
+      : '',
     body.roomWidthCm && body.roomHeightCm ? `Espaço do cliente: ${body.roomWidthCm}cm de largura por ${body.roomHeightCm}cm de altura.` : '',
     '',
     'O resultado deve ser indistinguível de uma fotografia real da cozinha do cliente já instalada, mantendo 100% de fidelidade à montagem enviada — mesmos módulos, mesmas posições, mesmas cores.',
@@ -209,7 +229,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // Temperatura baixa = maxima fidelidade a imagem de entrada (a IA
           // reorganizava/redesenhava os modulos com temperatura alta). Aqui
           // queremos edicao/retoque da colagem, nao recriacao criativa.
-          generationConfig: { temperature: 0.05 },
+          generationConfig: { temperature: 0 },
         }),
       });
       if (!geminiRes.ok) {
