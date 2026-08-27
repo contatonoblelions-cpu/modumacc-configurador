@@ -255,10 +255,17 @@ export function AiVisualization() {
                       alt="Visualização gerada com IA do ambiente com os móveis escolhidos"
                       className="w-full rounded-lg"
                     />
+                    <a
+                      href={aiRender.imageDataUrl}
+                      download="cozinha-modumacc-3d.png"
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-brand-navy-800 px-4 py-2.5 text-sm font-medium text-brand-navy-800 transition hover:bg-brand-navy-50"
+                    >
+                      <span aria-hidden="true">⭳</span> Baixar imagem 3D
+                    </a>
                     <button
                       type="button"
                       onClick={() => void generateAiRender()}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-navy-800 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-900"
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-navy-800 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-900"
                     >
                       <span aria-hidden="true">↻</span> Gerar novamente
                     </button>
