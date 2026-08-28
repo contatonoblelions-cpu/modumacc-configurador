@@ -5,6 +5,8 @@ export interface PlacedRect {
   y: number;
   widthCm: number;
   heightCm: number;
+  /** Quando true, o retangulo conta pra COLISAO (nao invadir) mas NAO vira alvo de ima/encaixe. Usado em geladeira/fogao. */
+  noSnap?: boolean;
 }
 
 export interface Point {
@@ -113,6 +115,7 @@ export function snapPositionCm(
   // so entra quando ha sobreposicao horizontal.
   const yCandidates: number[] = [minY, maxY];
   for (const o of others) {
+    if (o.noSnap) continue; // geladeira/fogao nao atraem o ima
     yCandidates.push(o.y);                               // topo alinha com topo
     yCandidates.push(o.y + o.heightCm - size.heightCm);  // base alinha com base
     if (horizontallyOverlaps(o)) {
@@ -128,6 +131,7 @@ export function snapPositionCm(
     snappedY < o.y + o.heightCm && snappedY + size.heightCm > o.y;
   const xCandidates: number[] = [0, maxX];
   for (const o of others) {
+    if (o.noSnap) continue; // geladeira/fogao nao atraem o ima
     if (vOverlapAtSnapY(o)) {
       xCandidates.push(o.x + o.widthCm);                 // rente a direita do vizinho
       xCandidates.push(o.x - size.widthCm);              // rente a esquerda do vizinho
