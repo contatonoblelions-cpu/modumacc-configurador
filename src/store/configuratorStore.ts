@@ -242,6 +242,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                             y: Math.max(0, room.heightCm - fridgeObstacle.heightCm),
                             widthCm: fridgeObstacle.widthCm,
                             heightCm: fridgeObstacle.heightCm,
+                            noSnap: true,
                   });
           }
           const stoveObstacle = get().stove;
@@ -251,6 +252,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                             y: Math.max(0, room.heightCm - stoveObstacle.heightCm),
                             widthCm: stoveObstacle.widthCm,
                             heightCm: stoveObstacle.heightCm,
+                            noSnap: true,
                   });
           }
           const band = getModuleBand(item.moduleName);
