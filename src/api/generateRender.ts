@@ -108,6 +108,44 @@ export interface BuildCollageParams {
  * são same-origin (/modules/...) e a foto do ambiente é data URL — o canvas
  * não fica "tainted", então o toDataURL funciona.
  */
+function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number): void {
+  ctx.save();
+  ctx.globalAlpha = 0.13;
+  ctx.fillStyle = '#7f8487';
+  const fs = Math.max(16, Math.round(W * 0.028));
+  ctx.font = `700 ${fs}px Arial, Helvetica, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.translate(W / 2, H / 2);
+  ctx.rotate(-Math.PI / 9);
+  const stepX = fs * 10;
+  const stepY = fs * 5;
+  for (let y = -H; y <= H; y += stepY) {
+    for (let x = -W; x <= W; x += stepX) {
+      ctx.fillText('MODUMACC', x, y);
+    }
+  }
+  ctx.restore();
+}
+
+export async function applyWatermark(dataUrl: string): Promise<string> {
+  try {
+    const img = await loadImage(dataUrl);
+    const W = img.naturalWidth || 1024;
+    const H = img.naturalHeight || 768;
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const ctx = c.getContext('2d');
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, W, H);
+    drawWatermark(ctx, W, H);
+    return c.toDataURL('image/jpeg', 0.92);
+  } catch {
+    return dataUrl;
+  }
+}
+
 export async function buildCollageDataUrl(
   params: BuildCollageParams,
 ): Promise<{ base64: string; mimeType: string } | null> {
@@ -244,6 +282,7 @@ export async function buildCollageDataUrl(
       ctx.fillRect(fx, fy, Math.max(fw, sw * 0.16), fw);
     }
 
+    drawWatermark(ctx, W, H);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     const base64 = dataUrl.split(',')[1] ?? '';
     if (!base64) return null;
