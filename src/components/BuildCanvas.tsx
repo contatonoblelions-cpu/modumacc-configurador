@@ -653,6 +653,16 @@ export function BuildCanvas() {
         {sink && <DraggableSink sink={sink} scale={scale} canvasHeight={canvasHeight} counterRatio={counterRatio} />}
         {fridge && <DraggableFridge fridge={fridge} scale={scale} canvasHeight={canvasHeight} />}
         {stove && <DraggableStove stove={stove} scale={scale} canvasHeight={canvasHeight} />}
+
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-50 select-none opacity-[0.10]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='150'><text x='130' y='80' font-family='Arial, sans-serif' font-size='22' font-weight='700' fill='%23223' text-anchor='middle' transform='rotate(-20 130 75)'>MODUMACC</text></svg>\")",
+            backgroundRepeat: 'repeat',
+          }}
+        />
       </div>
         </div>
       </div>
