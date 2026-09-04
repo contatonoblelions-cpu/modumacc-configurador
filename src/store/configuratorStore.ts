@@ -4,6 +4,7 @@ import type { PlacedModule, RoomDimensions, SinkFixture, FridgeFixture, StoveFix
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
 import { applyWatermark, buildCollageDataUrl, buildRenderModules, generateRender } from '../api/generateRender';
 import { resolvePositionCm, packedPositionCm, snapPositionCm } from '../utils/placement';
+import type { PlacedRect } from '../utils/placement';
 import { getModuleBand, getBandYRange, getCountertopRatio } from '../utils/bands';
 import { FRIDGE_WIDTH_CM, FRIDGE_HEIGHT_CM } from '../utils/fridge';
 import { STOVE_WIDTH_CM, STOVE_HEIGHT_CM } from '../utils/stove';
@@ -232,7 +233,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           if (!item) return;
           const room = get().room;
           if (!room) return;
-          const others = modules
+          const others: PlacedRect[] = modules
             .filter((m) => m.instanceId !== instanceId)
             .map((m) => ({ x: m.offsetXCm, y: m.offsetYCm, widthCm: m.widthCm, heightCm: m.heightCm }));
           const fridgeObstacle = get().fridge;
