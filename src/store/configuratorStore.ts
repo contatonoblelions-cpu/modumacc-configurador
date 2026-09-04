@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { CatalogModule } from '../types/catalog';
 import type { PlacedModule, RoomDimensions, SinkFixture, FridgeFixture, StoveFixture } from '../types/composition';
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
-import { buildCollageDataUrl, buildRenderModules, generateRender } from '../api/generateRender';
+import { applyWatermark, buildCollageDataUrl, buildRenderModules, generateRender } from '../api/generateRender';
 import { resolvePositionCm, packedPositionCm, snapPositionCm } from '../utils/placement';
 import { getModuleBand, getBandYRange, getCountertopRatio } from '../utils/bands';
 import { FRIDGE_WIDTH_CM, FRIDGE_HEIGHT_CM } from '../utils/fridge';
@@ -398,10 +398,12 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                             collageBase64: collage?.base64,
                             collageMimeType: collage?.mimeType,
                   });
+                  const rawUrl = `data:${result.mimeType};base64,${result.imageBase64}`;
+                  const watermarked = await applyWatermark(rawUrl);
                   set({
                             aiRender: {
                                         loading: false,
-                                        imageDataUrl: `data:${result.mimeType};base64,${result.imageBase64}`,
+                                        imageDataUrl: watermarked,
                                         error: null,
                             },
                   });
