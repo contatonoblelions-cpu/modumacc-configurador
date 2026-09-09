@@ -55,7 +55,7 @@ export function ModuleSchematic({ name, className, finishImageUrl, handleColor }
       <rect x="0" y="0" width="100" height="100" fill="#F5F7F7" />
       {type === 'porta' && <Portas count={count} fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
       {type === 'gaveta' && <Gavetas count={count} fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
-      {type === 'nicho' && <Nicho fill={fill} />}
+      {type === 'nicho' && <Nicho />}
       {type === 'microondas' && <Microondas fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
       {type === 'basculante' && <Basculante fill={fill} />}
       {type === 'generic' && <Generic fill={fill} />}
@@ -126,7 +126,9 @@ function Gavetas({ count, fill, handleFill, handleStroke }: { count: number; fil
   );
 }
 
-function Nicho({ fill }: { fill: string }) {
+function Nicho() {
+  // Nichos e SEMPRE branco puro (pedido do cliente), nao acompanha o acabamento.
+  const fill = "#ffffff";
   // "Nichos" = coluna de nichos ABERTOS (linha limpa igual ao desenho de
   // referencia): moldura + 3 prateleiras (linha DUPLA = espessura) + rodape
   // na base. Topo levemente menor. Sem porta, puxador nem sombreado.
