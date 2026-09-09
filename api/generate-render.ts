@@ -153,6 +153,7 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     '- NÃO adicione móveis, armários, prateleiras, objetos, plantas ou decoração que NÃO estejam na montagem. PORÉM, a montagem pode já conter uma geladeira, um fogão e uma pia com torneira sobre uma bancada de pedra — esses itens FAZEM PARTE da montagem e devem ser MANTIDOS e renderizados como aparelhos reais e fiéis (geladeira e fogão de inox/aço, bancada de pedra tipo granito/quartzo), no mesmo lugar, tamanho e proporção em que aparecem.',
     '- NÃO remova nenhum módulo presente na montagem.',
     '- NÃO altere a parede, o piso, as janelas, portas nem a perspectiva do ambiente original — apenas melhore a iluminação e a integração dos móveis já presentes.',
+    '- A COLAGEM enviada é a VERDADE ABSOLUTA da montagem: reproduza a MESMA vista frontal reta, as MESMAS posições, os MESMOS tamanhos e as MESMAS proporções de cada módulo, o mais próximo possível de pixel a pixel com a colagem. NÃO aplique perspectiva, NÃO gire, NÃO estique, NÃO reenquadre nem reposicione nada — apenas dê acabamento fotográfico (luz, sombra, textura) por cima da colagem.',
     '',
     body.finish ? `Acabamento/cor dos módulos (apenas para referência, já aplicado na imagem): ${body.finish}.` : '',
     body.handle ? `Acabamento do puxador escolhido pelo cliente: ${body.handle}.` : '',
