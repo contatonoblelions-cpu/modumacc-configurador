@@ -106,14 +106,14 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
   // entao nomeamos a cor do metal pra ela manter fiel (aluminio vs bronze).
   const handleInstr =
     body.handle === 'Bronze'
-      ? 'ATENÇÃO AOS PUXADORES: eles são de metal BRONZE/DOURADO (tom âmbar dourado escuro, acetinado). Renderize TODOS os puxadores exatamente nesse tom bronze/dourado, com leve brilho metálico — NUNCA prateados, cromados ou de alumínio.'
+      ? 'ABERTURA POR PERFIL GOLA (NÃO existem puxadores nem alças salientes): portas e gavetas abrem por um PERFIL GOLA embutido — um perfil de metal fino e recuado na borda das frentes. O metal é BRONZE/DOURADO (tom âmbar dourado acetinado). Renderize esse perfil gola discreto, reto e embutido nesse tom bronze/dourado — NUNCA como alça/puxador saliente, botão, nem metal prateado ou cromado.'
       : body.handle === 'Alumínio'
-        ? 'ATENÇÃO AOS PUXADORES: eles são de ALUMÍNIO escovado (prata metálica fosca). Renderize TODOS os puxadores nesse tom prata/alumínio escovado — NUNCA dourados ou bronze.'
+        ? 'ABERTURA POR PERFIL GOLA (NÃO existem puxadores nem alças salientes): portas e gavetas abrem por um PERFIL GOLA embutido — um perfil de metal fino e recuado na borda das frentes. O metal é ALUMÍNIO escovado (prata metálica fosca). Renderize esse perfil gola discreto, reto e embutido nesse tom prata/alumínio — NUNCA como alça/puxador saliente, botão, nem metal dourado ou bronze.'
         : '';
   const tipoDe = (nome: string): string => {
     const nn = nome.toLowerCase();
     const g = nn.match(/(\d+)\s*gavetas?/);
-    if (g || nn.includes('gaveta')) return ` [GAVETEIRO: ${g ? g[1] : ''} gavetas horizontais empilhadas, cada uma com puxador horizontal]`;
+    if (g || nn.includes('gaveta')) return ` [GAVETEIRO: ${g ? g[1] : ''} gavetas horizontais empilhadas, cada uma com perfil gola embutido na borda superior]`;
     if (nn.includes('nicho') || nn.includes('basculante')) return ' [armario/nicho de frente fechada]';
     const pt = nn.match(/(\d+)\s*portas?/);
     if (pt || nn.includes('porta')) return ` [${pt ? pt[1] : '1'} porta(s) vertical(is)]`;
@@ -138,17 +138,18 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     '4) PROIBIDO trocar a cor/acabamento dos módulos ou a cor do puxador (alumínio prata vs bronze dourado).',
     '5) PROIBIDO preencher parede vazia com armário — parede sem módulo permanece parede vazia.',
     '6) PROIBIDO inventar eletrodomésticos, decoração, objetos ou móveis que não estejam na imagem.',
+    '6b) PROIBIDO "completar", "equilibrar", simetrizar ou preencher vãos para deixar a cozinha "cheia": vão entre módulos, canto vazio e parede sem módulo PERMANECEM exatamente vazios. Na dúvida entre adicionar ou não um módulo/prateleira/nicho, NÃO adicione.',
     '',
     '',
     `A montagem contém EXATAMENTE ${nModulos} módulo(s), nesta ordem: ${lista}.`,
-    `O resultado FINAL deve conter exatamente esses ${nModulos} módulo(s), cada um do MESMO tipo indicado (gaveteiro continua gaveteiro, porta continua porta) — nunca crie um a mais, nunca remova, nunca converta um tipo em outro.`,
+    `O resultado FINAL deve conter exatamente esses ${nModulos} módulo(s), cada um do MESMO tipo indicado (gaveteiro continua gaveteiro, porta continua porta) — nunca crie um a mais, nunca remova, nunca converta um tipo em outro. Conte os blocos de marcenaria no resultado: se houver MAIS de ${nModulos}, está ERRADO e deve ser refeito removendo o(s) módulo(s) inventado(s) até sobrar exatamente ${nModulos}.`,
     'REGRAS OBRIGATÓRIAS — não quebre nenhuma:',
     '- NÃO mude a posição, o tamanho, a quantidade nem a ordem dos módulos. Eles devem permanecer EXATAMENTE onde estão na imagem, na mesma grade/alinhamento.',
     '- NÃO altere o DESENHO de cada módulo: mantenha o mesmo número e tipo de portas, gavetas, nichos e frentes que aparecem em cada módulo da imagem. Não troque uma gaveta por porta, não junte módulos, não invente prateleiras.',
     '- GAVETEIRO É GAVETEIRO: qualquer módulo com gavetas horizontais empilhadas (2 gavetas, 3 gavetas etc.) DEVE permanecer com o MESMO número de gavetas horizontais e seus puxadores horizontais. JAMAIS transforme um gaveteiro numa porta inteiriça, nunca apague as divisórias entre as gavetas nem mude a quantidade delas.',
     '- NÃO deixe espaços vazios onde há módulo, nem preencha com armário genérico onde não há. Copie fielmente a composição da imagem.',
     '- NÃO troque, altere, escureça, clareie ou "corrija" as cores/acabamentos dos módulos. Use fielmente as cores que já estão na imagem.',
-    '- MANTENHA o acabamento EXATO dos puxadores (alumínio prata OU bronze dourado, conforme indicado abaixo). Este é um erro comum: não transforme puxador bronze em prateado nem vice-versa.',
+    '- MANTENHA o acabamento EXATO do PERFIL GOLA (alumínio prata OU bronze dourado, conforme indicado abaixo). A abertura é sempre por perfil gola embutido: NÃO invente puxadores nem alças salientes. Erro comum: não transforme gola bronze em prateada nem vice-versa.',
     '- NÃO adicione móveis, armários, prateleiras, objetos, plantas ou decoração que NÃO estejam na montagem. PORÉM, a montagem pode já conter uma geladeira, um fogão e uma pia com torneira sobre uma bancada de pedra — esses itens FAZEM PARTE da montagem e devem ser MANTIDOS e renderizados como aparelhos reais e fiéis (geladeira e fogão de inox/aço, bancada de pedra tipo granito/quartzo), no mesmo lugar, tamanho e proporção em que aparecem.',
     '- NÃO remova nenhum módulo presente na montagem.',
     '- NÃO altere a parede, o piso, as janelas, portas nem a perspectiva do ambiente original — apenas melhore a iluminação e a integração dos móveis já presentes.',
@@ -157,7 +158,7 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     body.handle ? `Acabamento do puxador escolhido pelo cliente: ${body.handle}.` : '',
     handleInstr,
     temGaveteiro
-      ? 'ATENÇÃO AOS GAVETEIROS: os módulos marcados como GAVETEIRO têm frentes horizontais empilhadas (gavetas), cada uma com um puxador horizontal. Mantenha EXATAMENTE o número de gavetas que aparece na imagem, com as divisórias horizontais bem visíveis. NUNCA transforme um gaveteiro em porta, nunca mude o número de gavetas.'
+      ? 'ATENÇÃO AOS GAVETEIROS: os módulos marcados como GAVETEIRO têm frentes horizontais empilhadas (gavetas), cada uma com um perfil gola embutido na borda superior. Mantenha EXATAMENTE o número de gavetas que aparece na imagem, com as divisórias horizontais bem visíveis. NUNCA transforme um gaveteiro em porta, nunca mude o número de gavetas.'
       : '',
     body.roomWidthCm && body.roomHeightCm ? `Espaço do cliente: ${body.roomWidthCm}cm de largura por ${body.roomHeightCm}cm de altura.` : '',
     '',
