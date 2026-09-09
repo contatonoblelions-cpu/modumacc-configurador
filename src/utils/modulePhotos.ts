@@ -41,7 +41,7 @@ const NICHO_OPEN_SVG =
   'data:image/svg+xml,' +
   encodeURIComponent(
     "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='360' viewBox='0 0 120 360' preserveAspectRatio='none'>" +
-    "<rect width='120' height='360' fill='#f5f7f7'/>" +
+    "<rect width='120' height='360' fill='#ffffff'/>" +
     "<g stroke='#b9bdbf' fill='none' stroke-width='2'>" +
     "<rect x='2' y='2' width='116' height='356' stroke-width='3'/>" +
     "<line x1='2' y1='68' x2='118' y2='68'/><line x1='2' y1='74' x2='118' y2='74'/>" +
