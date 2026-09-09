@@ -14,7 +14,7 @@ type Step = 'room' | 'build' | 'review';
 interface RoomPhoto {
     base64: string;
     mimeType: string;
-    /** Data URL (`data:image/...;base64,...`) pronta pra usar num <img src>, sÃ³ pra preview. */
+    /** Data URL (`data:image/...;base64,...`) pronta pra usar num <img src>, só pra preview. */
   previewUrl: string;
 }
 
@@ -25,10 +25,10 @@ interface AiRenderState {
 }
 
 /**
- * PosiÃ§Ã£o "fantasma" mostrada em tempo real ENQUANTO o usuÃ¡rio ainda estÃ¡
- * arrastando (antes de soltar) â Ã© o retÃ¢ngulo tracejado que aparece no
- * ponto exato (X, Y) pra onde o mÃ³dulo vai se ele soltar ali, em qualquer
- * lugar do quadrante. Estado efÃªmero (nÃ£o faz parte da composiÃ§Ã£o salva),
+ * Posição "fantasma" mostrada em tempo real ENQUANTO o usuário ainda está
+ * arrastando (antes de soltar) — é o retângulo tracejado que aparece no
+ * ponto exato (X, Y) pra onde o módulo vai se ele soltar ali, em qualquer
+ * lugar do quadrante. Estado efêmero (não faz parte da composição salva),
  * atualizado a cada movimento do dedo/mouse via `onDragMove` em `App.tsx` e
  * lido por `BuildCanvas.tsx` pra desenhar o indicador.
  */
@@ -42,7 +42,7 @@ export interface DragPreview {
 interface ConfiguratorState {
     step: Step;
     room: RoomDimensions | null;
-    /** Foto do ambiente enviada pelo cliente na tela de medidas â opcional, usada na visualizaÃ§Ã£o com IA. */
+    /** Foto do ambiente enviada pelo cliente na tela de medidas — opcional, usada na visualização com IA. */
   roomPhoto: RoomPhoto | null;
     catalog: CatalogModule[];
     catalogLoading: boolean;
@@ -52,13 +52,13 @@ interface ConfiguratorState {
     handle: string | null;
     resolving: boolean;
     aiRender: AiRenderState;
-    /** Ver `DragPreview` â null quando nÃ£o hÃ¡ arrasto em andamento. */
+    /** Ver `DragPreview` — null quando não há arrasto em andamento. */
   dragPreview: DragPreview | null;
-    /** Pia com torneira posicionada sobre a bancada -- null quando o espaÃ§o nÃ£o tem largura de pia informada (ver `RoomDimensions.sinkWidthCm`). */
+    /** Pia com torneira posicionada sobre a bancada -- null quando o espaço não tem largura de pia informada (ver `RoomDimensions.sinkWidthCm`). */
   sink: SinkFixture | null;
-    /** Geladeira de referÃªncia visual -- null quando o cliente nÃ£o marcou "incluir geladeira" (ver `RoomDimensions.includeFridge`). */
+    /** Geladeira de referência visual -- null quando o cliente não marcou "incluir geladeira" (ver `RoomDimensions.includeFridge`). */
   fridge: FridgeFixture | null;
-    /** FogÃ£o de referÃªncia visual -- null quando o cliente nÃ£o marcou "incluir fogÃ£o". */
+    /** Fogão de referência visual -- null quando o cliente não marcou "incluir fogão". */
   stove: StoveFixture | null;
 
   loadCatalog: () => Promise<void>;
@@ -66,46 +66,46 @@ interface ConfiguratorState {
     setRoomPhoto: (photo: RoomPhoto | null) => void;
     backToRoomStep: () => void;
     /**
-     * "PrÃ³ximo passo" (usado sobretudo no celular, mas vale pros dois
-     * formatos): sai da tela de montagem (mÃ³dulos + parede) pra uma tela de
-     * revisÃ£o sÃ³ com a parede montada â ainda editÃ¡vel (dÃ¡ pra mover e
-     * remover mÃ³dulo), sÃ³ sem o painel de catÃ¡logo, pra facilitar conferir
+     * "Próximo passo" (usado sobretudo no celular, mas vale pros dois
+     * formatos): sai da tela de montagem (módulos + parede) pra uma tela de
+     * revisão só com a parede montada — ainda editável (dá pra mover e
+     * remover módulo), só sem o painel de catálogo, pra facilitar conferir
      * tudo antes de ir pro carrinho.
      */
   goToReview: () => void;
-    /** Volta da revisÃ£o pra tela de montagem (com o painel de mÃ³dulos de novo). */
+    /** Volta da revisão pra tela de montagem (com o painel de módulos de novo). */
   backToBuildStep: () => void;
     /**
-     * `position` Ã© o ponto (X, Y) LIVRE onde o mÃ³dulo entra, em cm a partir do
-     * canto superior esquerdo do espaÃ§o â omitido, entra no primeiro canto
-     * livre (usado pelo botÃ£o "+ Adicionar" e pelo deep-link); informado,
-     * entra o mais perto possÃ­vel dali, sem sobrepor outro mÃ³dulo (ver
-     * `resolvePositionCm` em `utils/placement.ts`) â usado ao soltar um
-     * mÃ³dulo arrastado do catÃ¡logo em qualquer ponto do quadrante.
+     * `position` é o ponto (X, Y) LIVRE onde o módulo entra, em cm a partir do
+     * canto superior esquerdo do espaço — omitido, entra no primeiro canto
+     * livre (usado pelo botão "+ Adicionar" e pelo deep-link); informado,
+     * entra o mais perto possível dali, sem sobrepor outro módulo (ver
+     * `resolvePositionCm` em `utils/placement.ts`) — usado ao soltar um
+     * módulo arrastado do catálogo em qualquer ponto do quadrante.
      */
   addModule: (mod: CatalogModule, widthCm: number, position?: { x: number; y: number }) => void;
     removeModule: (instanceId: string) => void;
-    /** Reposiciona um mÃ³dulo jÃ¡ colocado pra um ponto (X, Y) livre especÃ­fico do quadrante (arrastar-e-soltar). */
+    /** Reposiciona um módulo já colocado pra um ponto (X, Y) livre específico do quadrante (arrastar-e-soltar). */
   moveModule: (instanceId: string, targetXCm: number, targetYCm: number) => void;
     /**
-     * Gira o mÃ³dulo `deltaDeg` graus (positivo = horÃ¡rio) a partir da rotaÃ§Ã£o
+     * Gira o módulo `deltaDeg` graus (positivo = horário) a partir da rotação
      * atual, dando a volta completa (0-359, com wraparound nos dois
-     * sentidos) â sÃ³ efeito visual, nÃ£o muda o espaÃ§o ocupado na parede.
+     * sentidos) — só efeito visual, não muda o espaço ocupado na parede.
      */
   rotateModule: (instanceId: string, deltaDeg: number) => void;
-    /** Atualiza o indicador de posiÃ§Ã£o em tempo real durante o arrasto (ver `DragPreview`). */
+    /** Atualiza o indicador de posição em tempo real durante o arrasto (ver `DragPreview`). */
   setDragPreview: (preview: DragPreview | null) => void;
-    /** Move a pia pra uma posiÃ§Ã£o X (cm) livre horizontalmente dentro do espaÃ§o -- fica sempre encostada na linha da bancada, sÃ³ desliza pros lados. */
+    /** Move a pia pra uma posição X (cm) livre horizontalmente dentro do espaço -- fica sempre encostada na linha da bancada, só desliza pros lados. */
   moveSink: (targetXCm: number) => void;
-    /** Move a geladeira pra uma posiÃ§Ã£o X (cm) livre horizontalmente dentro do espaÃ§o -- fica sempre encostada no chÃ£o, sÃ³ desliza pros lados (mesma lÃ³gica de `moveSink`). */
+    /** Move a geladeira pra uma posição X (cm) livre horizontalmente dentro do espaço -- fica sempre encostada no chão, só desliza pros lados (mesma lógica de `moveSink`). */
   moveFridge: (targetXCm: number) => void;
-    /** Move o fogÃ£o horizontalmente (mesma lÃ³gica de `moveFridge`). */
+    /** Move o fogão horizontalmente (mesma lógica de `moveFridge`). */
   moveStove: (targetXCm: number) => void;
     setFinish: (finish: string) => void;
     setHandle: (handle: string) => void;
-    /** Resolve preÃ§o + URL de add-to-cart de cada mÃ³dulo colocado contra acabamento/puxador atuais. */
+    /** Resolve preço + URL de add-to-cart de cada módulo colocado contra acabamento/puxador atuais. */
   resolveComposition: () => Promise<void>;
-    /** Chama a funÃ§Ã£o serverless que gera a visualizaÃ§Ã£o com IA (foto + mÃ³dulos escolhidos). */
+    /** Chama a função serverless que gera a visualização com IA (foto + módulos escolhidos). */
   generateAiRender: () => Promise<void>;
 }
 
@@ -143,7 +143,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           } catch (err) {
                   set({
                             catalogLoading: false,
-                            catalogError: err instanceof Error ? err.message : 'Erro ao carregar catÃ¡logo',
+                            catalogError: err instanceof Error ? err.message : 'Erro ao carregar catálogo',
                   });
           }
     },
@@ -415,7 +415,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                             aiRender: {
                                         loading: false,
                                         imageDataUrl: null,
-                                        error: err instanceof Error ? err.message : 'Erro ao gerar a visualizaÃ§Ã£o.',
+                                        error: err instanceof Error ? err.message : 'Erro ao gerar a visualização.',
                             },
                   });
           }
