@@ -7,6 +7,8 @@ export interface PlacedRect {
   heightCm: number;
   /** Quando true, o retangulo conta pra COLISAO (nao invadir) mas NAO vira alvo de ima/encaixe. Usado em geladeira/fogao. */
   noSnap?: boolean;
+  /** Faixa aerea (superior): encaixe nos 4 lados so acontece entre modulos superiores. */
+  superior?: boolean;
 }
 
 export interface Point {
@@ -71,6 +73,7 @@ export function snapPositionCm(
   size: { widthCm: number; heightCm: number },
   room: RoomDimensions,
   yBounds?: YBounds,
+  selfSuperior: boolean = false,
 ): Point {
   const maxX = Math.max(0, room.widthCm - size.widthCm);
   const minY = yBounds ? yBounds.minY : 0;
@@ -87,6 +90,11 @@ export function snapPositionCm(
 
   const horizontallyOverlaps = (o: PlacedRect) =>
     pos.x < o.x + o.widthCm && pos.x + size.widthCm > o.x;
+  // Modulos superiores encaixam ao chegar PERTO (dentro de SNAP_CM) por qualquer lado.
+  const horizontallyNear = (o: PlacedRect) =>
+    pos.x < o.x + o.widthCm + SNAP_CM && pos.x + size.widthCm > o.x - SNAP_CM;
+  const canStackY = (o: PlacedRect) =>
+    selfSuperior && o.superior ? horizontallyNear(o) : horizontallyOverlaps(o);
 
   function snapAxis(
     value: number,
@@ -118,7 +126,7 @@ export function snapPositionCm(
     if (o.noSnap) continue; // geladeira/fogao nao atraem o ima
     yCandidates.push(o.y);                               // topo alinha com topo
     yCandidates.push(o.y + o.heightCm - size.heightCm);  // base alinha com base
-    if (horizontallyOverlaps(o)) {
+    if (canStackY(o)) {
       yCandidates.push(o.y + o.heightCm);                // sentar embaixo do vizinho
       yCandidates.push(o.y - size.heightCm);             // sentar em cima do vizinho
     }
@@ -129,10 +137,14 @@ export function snapPositionCm(
   // (e alinhar bordas esquerda/direita) com quem estiver na mesma faixa vertical.
   const vOverlapAtSnapY = (o: PlacedRect) =>
     snappedY < o.y + o.heightCm && snappedY + size.heightCm > o.y;
+  const vNearAtSnapY = (o: PlacedRect) =>
+    snappedY < o.y + o.heightCm + SNAP_CM && snappedY + size.heightCm > o.y - SNAP_CM;
+  const canSideX = (o: PlacedRect) =>
+    selfSuperior && o.superior ? vNearAtSnapY(o) : vOverlapAtSnapY(o);
   const xCandidates: number[] = [0, maxX];
   for (const o of others) {
     if (o.noSnap) continue; // geladeira/fogao nao atraem o ima
-    if (vOverlapAtSnapY(o)) {
+    if (canSideX(o)) {
       xCandidates.push(o.x + o.widthCm);                 // rente a direita do vizinho
       xCandidates.push(o.x - size.widthCm);              // rente a esquerda do vizinho
       xCandidates.push(o.x);                             // alinha borda esquerda
