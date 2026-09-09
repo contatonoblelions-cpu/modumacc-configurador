@@ -165,6 +165,13 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     body.roomWidthCm && body.roomHeightCm ? `Espaço do cliente: ${body.roomWidthCm}cm de largura por ${body.roomHeightCm}cm de altura.` : '',
     '',
     'O resultado deve ser indistinguível de uma fotografia real da cozinha do cliente já instalada, mantendo 100% de fidelidade à montagem enviada — mesmos módulos, mesmas posições, mesmas cores.',
+    '',
+    'PADRÃO DE QUALIDADE FOTOGRÁFICA (aplicar SEM alterar geometria, posição, cor, tipo nem quantidade dos módulos):',
+    '- Câmera perfeitamente FRONTAL e NIVELADA, na altura dos olhos, lente 35-50mm sem distorção; frentes e paredes ESTRITAMENTE verticais e o piso na horizontal. NUNCA incline, gire, aplique perspectiva forte nem efeito olho-de-peixe — o enquadramento é reto igual ao da colagem.',
+    '- Iluminação de fotografia de catálogo de marcenaria: luz natural suave e difusa vinda de uma janela lateral, exposição equilibrada, sem estouro de branco e sem sombras duras.',
+    '- Sombras de contato sutis e realistas onde cada módulo encosta na parede, no piso, na bancada e entre si, criando profundidade — o resultado NÃO pode parecer recorte/colagem chapada e sem volume.',
+    '- Materiais ricos: laca/MDF fosco com leve reflexo, veios de madeira quando o acabamento for madeira, bancada de pedra com veios naturais e polimento, e o perfil gola em metal com reflexo coerente (alumínio prata OU bronze dourado).',
+    '- Nitidez, foco e resolução de foto profissional, cores calibradas e fiéis, aparência premium — jamais aspecto de render 3D genérico, plástico ou desenho chapado.',
   ]
     .filter(Boolean)
     .join('\n');
