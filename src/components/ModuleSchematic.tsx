@@ -55,7 +55,7 @@ export function ModuleSchematic({ name, className, finishImageUrl, handleColor }
       <rect x="0" y="0" width="100" height="100" fill="#F5F7F7" />
       {type === 'porta' && <Portas count={count} fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
       {type === 'gaveta' && <Gavetas count={count} fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
-      {type === 'nicho' && <Nicho fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
+      {type === 'nicho' && <Nicho fill={fill} />}
       {type === 'microondas' && <Microondas fill={fill} handleFill={handleFill} handleStroke={handleStroke} />}
       {type === 'basculante' && <Basculante fill={fill} />}
       {type === 'generic' && <Generic fill={fill} />}
@@ -126,24 +126,20 @@ function Gavetas({ count, fill, handleFill, handleStroke }: { count: number; fil
   );
 }
 
-function Nicho({ fill, handleFill, handleStroke }: { fill: string } & HandleProps) {
-  // Apesar do nome "Nichos" no catalogo, a peca real e um armario fechado
-  // com porta e puxador (ver foto do produto) - nao um nicho aberto/vazado.
-  // Por isso o desenho e o mesmo de uma porta unica, sem linha de prateleira
-  // nem borda tracejada (que antes dava a impressao errada de vao aberto).
+function Nicho({ fill }: { fill: string }) {
+  // "Nichos" = coluna de nichos ABERTOS (vaos/prateleiras), sem porta nem
+  // puxador: moldura + prateleiras horizontais, com leve sombra no topo de
+  // cada vao pra dar sensacao de profundidade (ver print de referencia).
+  const shelves = [26, 52, 74];
   return (
     <>
       <rect x="2" y="2" width="96" height="96" fill={fill} stroke="#2E5A79" strokeWidth={2.5} />
-      <rect
-        x={8}
-        y={46}
-        width={3}
-        height={10}
-        rx={1.5}
-        fill={handleFill}
-        stroke={handleStroke}
-        strokeWidth={handleStroke ? 0.5 : 0}
-      />
+      {[2, ...shelves].map((sy, i) => (
+        <rect key={i} x="4" y={sy + 2} width="92" height="5" fill="rgba(0,0,0,0.10)" />
+      ))}
+      {shelves.map((sy) => (
+        <line key={sy} x1="2" y1={sy} x2="98" y2={sy} stroke="#2E5A79" strokeWidth={2} />
+      ))}
     </>
   );
 }
