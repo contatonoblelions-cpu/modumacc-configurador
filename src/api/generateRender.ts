@@ -267,9 +267,17 @@ export async function buildCollageDataUrl(
       stone.addColorStop(0.5, '#23272b');
       stone.addColorStop(1, '#15181b');
       ctx.fillStyle = stone;
-      ctx.fillRect(sx, lineY, sw, stoneH);
+      // Bancada de pedra CONTINUA de ponta a ponta (apoiada nos armarios), nunca flutuando.
+      ctx.fillRect(frameX, lineY, frameW, stoneH);
+      // aresta frontal escura = espessura do tampo, pra nao parecer flutuando
+      ctx.fillStyle = 'rgba(0,0,0,0.30)';
+      ctx.fillRect(frameX, lineY + stoneH, frameW, Math.max(2, stoneH * 0.35));
+      // brilho na quina superior
       ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      ctx.fillRect(sx, lineY, sw, Math.max(1, stoneH * 0.12));
+      ctx.fillRect(frameX, lineY, frameW, Math.max(1, stoneH * 0.12));
+      // cuba embutida na bancada, na posicao da pia
+      ctx.fillStyle = 'rgba(0,0,0,0.30)';
+      ctx.fillRect(sx + sw * 0.18, lineY + stoneH * 0.22, sw * 0.64, stoneH * 0.56);
       const fw = Math.max(5, sw * 0.06);
       const fx = sx + sw / 2 - fw / 2;
       const fy = lineY - faucetH;
