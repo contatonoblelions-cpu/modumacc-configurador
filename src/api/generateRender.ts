@@ -224,7 +224,7 @@ export async function buildCollageDataUrl(
 
       // REFORCO DE GAVETEIRO: as fotos de gaveta tem divisorias sutis que a IA
       // as vezes le como nicho/prateleira aberta. Aqui desenhamos por cima
-      // linhas de divisao fortes + barras de puxador (na cor escolhida).
+      // linhas de divisao fortes + perfil gola embutido (na cor escolhida).
       const gv = m.moduleName.toLowerCase().match(/(\d+)\s*gavetas?/);
       if (gv || m.moduleName.toLowerCase().includes('gaveta')) {
         const count = gv ? Math.max(1, parseInt(gv[1], 10)) : 2;
@@ -242,15 +242,15 @@ export async function buildCollageDataUrl(
             ctx.lineWidth = Math.max(1.5, h * 0.006);
             ctx.beginPath(); ctx.moveTo(x, dy); ctx.lineTo(x + w, dy); ctx.stroke();
           }
-          const bw = w * 0.44;
-          const bh = Math.max(2, drawerH * 0.09);
-          const bx = x + (w - bw) / 2;
-          const by = dy + drawerH * 0.16;
-          const grad = ctx.createLinearGradient(0, by, 0, by + bh);
+          // Perfil gola: fresta fina de metal EMBUTIDA na borda superior da gaveta
+          // (sem alca saliente), na cor do metal escolhido.
+          const golaH = Math.max(2, drawerH * 0.06);
+          const golaY = dy + Math.max(1, drawerH * 0.04);
+          const grad = ctx.createLinearGradient(0, golaY, 0, golaY + golaH);
           grad.addColorStop(0, metalA);
           grad.addColorStop(1, metalB);
           ctx.fillStyle = grad;
-          ctx.fillRect(bx, by, bw, bh);
+          ctx.fillRect(x + w * 0.04, golaY, w * 0.92, golaH);
         }
       }
     }
