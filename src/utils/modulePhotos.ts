@@ -31,6 +31,23 @@ const HANDLE_SLUGS: Record<string, string> = {
 const DEFAULT_FINISH_SLUG = 'branco';
 const DEFAULT_HANDLE_SLUG = 'aluminio';
 
+/**
+ * Modulo "Nichos": nichos ABERTOS (vaos/prateleiras) em branco, sem porta
+ * nem puxador -- desenho vetorial (SVG data-URL) em vez de foto, sempre o
+ * mesmo independente de acabamento/puxador (ver print de referencia do
+ * cliente). Usado tanto na parede 2D quanto na colagem/render.
+ */
+const NICHO_OPEN_SVG =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='360' viewBox='0 0 120 360' preserveAspectRatio='none'>" +
+    "<rect width='120' height='360' fill='#f7f7f5'/>" +
+    "<g fill='#edf0f1'><rect x='10' y='8' width='100' height='36'/><rect x='10' y='58' width='100' height='86'/><rect x='10' y='160' width='100' height='86'/><rect x='10' y='262' width='100' height='88'/></g>" +
+    "<g fill='rgba(0,0,0,0.10)'><rect x='10' y='8' width='100' height='11'/><rect x='10' y='58' width='100' height='12'/><rect x='10' y='160' width='100' height='12'/><rect x='10' y='262' width='100' height='12'/></g>" +
+    "<g stroke='#c4c8ca' stroke-width='2' fill='none'><rect x='2' y='2' width='116' height='356'/><line x1='2' y1='50' x2='118' y2='50'/><line x1='2' y1='152' x2='118' y2='152'/><line x1='2' y1='254' x2='118' y2='254'/></g>" +
+    "</svg>"
+  );
+
 /** Formatos que têm foto exata em cada uma das 10 combinações de cor/puxador. */
 const COLOR_DEPENDENT_SHAPES = new Set([
     'nicho',
@@ -95,6 +112,9 @@ export function getModulePhoto(
     if (!key) return null;
 
   if (key === 'microondas') return '/modules/microondas.jpg';
+
+  // Nichos = nichos abertos em branco (desenho vetorial fixo, sem cor/puxador).
+  if (key === 'nicho') return NICHO_OPEN_SVG;
 
   if (!COLOR_DEPENDENT_SHAPES.has(key)) return null;
 
