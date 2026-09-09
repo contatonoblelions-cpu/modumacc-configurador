@@ -148,6 +148,7 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     '- NÃO altere o DESENHO de cada módulo: mantenha o mesmo número e tipo de portas, gavetas, nichos e frentes que aparecem em cada módulo da imagem. Não troque uma gaveta por porta, não junte módulos, não invente prateleiras.',
     '- GAVETEIRO É GAVETEIRO: qualquer módulo com gavetas horizontais empilhadas (2 gavetas, 3 gavetas etc.) DEVE permanecer com o MESMO número de gavetas horizontais e seus puxadores horizontais. JAMAIS transforme um gaveteiro numa porta inteiriça, nunca apague as divisórias entre as gavetas nem mude a quantidade delas.',
     '- NÃO deixe espaços vazios onde há módulo, nem preencha com armário genérico onde não há. Copie fielmente a composição da imagem.',
+    '- NICHO É NICHO ABERTO: o módulo de nichos é uma coluna de prateleiras/vãos ABERTOS, sem porta. Mantenha os vãos abertos e as prateleiras visíveis EXATAMENTE como na colagem. PROIBIDO fechar o nicho, virar armário de porta lisa ou simplificar num painel branco.',
     '- NÃO troque, altere, escureça, clareie ou "corrija" as cores/acabamentos dos módulos. Use fielmente as cores que já estão na imagem.',
     '- MANTENHA o acabamento EXATO do PERFIL GOLA (alumínio prata OU bronze dourado, conforme indicado abaixo). A abertura é sempre por perfil gola embutido: NÃO invente puxadores nem alças salientes. Erro comum: não transforme gola bronze em prateada nem vice-versa.',
     '- NÃO adicione móveis, armários, prateleiras, objetos, plantas ou decoração que NÃO estejam na montagem. PORÉM, a montagem pode já conter uma geladeira, um fogão e uma pia com torneira sobre uma bancada de pedra — esses itens FAZEM PARTE da montagem e devem ser MANTIDOS e renderizados como aparelhos reais e fiéis (geladeira e fogão de inox/aço, bancada de pedra tipo granito/quartzo), no mesmo lugar, tamanho e proporção em que aparecem.',
@@ -166,12 +167,7 @@ function buildStrictPrompt(body: GenerateRenderBody): string {
     '',
     'O resultado deve ser indistinguível de uma fotografia real da cozinha do cliente já instalada, mantendo 100% de fidelidade à montagem enviada — mesmos módulos, mesmas posições, mesmas cores.',
     '',
-    'PADRÃO DE QUALIDADE FOTOGRÁFICA (aplicar SEM alterar geometria, posição, cor, tipo nem quantidade dos módulos):',
-    '- Câmera perfeitamente FRONTAL e NIVELADA, na altura dos olhos, lente 35-50mm sem distorção; frentes e paredes ESTRITAMENTE verticais e o piso na horizontal. NUNCA incline, gire, aplique perspectiva forte nem efeito olho-de-peixe — o enquadramento é reto igual ao da colagem.',
-    '- Iluminação de fotografia de catálogo de marcenaria: luz natural suave e difusa vinda de uma janela lateral, exposição equilibrada, sem estouro de branco e sem sombras duras.',
-    '- Sombras de contato sutis e realistas onde cada módulo encosta na parede, no piso, na bancada e entre si, criando profundidade — o resultado NÃO pode parecer recorte/colagem chapada e sem volume.',
-    '- Materiais ricos: laca/MDF fosco com leve reflexo, veios de madeira quando o acabamento for madeira, bancada de pedra com veios naturais e polimento, e o perfil gola em metal com reflexo coerente (alumínio prata OU bronze dourado).',
-    '- Nitidez, foco e resolução de foto profissional, cores calibradas e fiéis, aparência premium — jamais aspecto de render 3D genérico, plástico ou desenho chapado.',
+    'ILUMINAÇÃO É A ÚNICA LIBERDADE: adicione apenas luz natural suave, sombras de contato realistas e materiais fiéis (laca fosca, pedra com veios, metal do perfil gola), com câmera FRONTAL e NIVELADA, sem perspectiva nem corte de módulos. NÃO redesenhe, NÃO simplifique, NÃO embeleze e NÃO reinterprete NADA além da luz e sombra — cada módulo continua com o desenho EXATO da colagem.',
   ]
     .filter(Boolean)
     .join('\n');
