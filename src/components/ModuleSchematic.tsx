@@ -127,19 +127,20 @@ function Gavetas({ count, fill, handleFill, handleStroke }: { count: number; fil
 }
 
 function Nicho({ fill }: { fill: string }) {
-  // "Nichos" = coluna de nichos ABERTOS (vaos/prateleiras), sem porta nem
-  // puxador: moldura + prateleiras horizontais, com leve sombra no topo de
-  // cada vao pra dar sensacao de profundidade (ver print de referencia).
-  const shelves = [26, 52, 74];
+  // "Nichos" = coluna de nichos ABERTOS (linha limpa igual ao desenho de
+  // referencia): moldura + 3 prateleiras (linha DUPLA = espessura) + rodape
+  // na base. Topo levemente menor. Sem porta, puxador nem sombreado.
+  const shelves = [19, 44, 69];
   return (
     <>
       <rect x="2" y="2" width="96" height="96" fill={fill} stroke="#2E5A79" strokeWidth={2.5} />
-      {[2, ...shelves].map((sy, i) => (
-        <rect key={i} x="4" y={sy + 2} width="92" height="5" fill="rgba(0,0,0,0.10)" />
-      ))}
       {shelves.map((sy) => (
-        <line key={sy} x1="2" y1={sy} x2="98" y2={sy} stroke="#2E5A79" strokeWidth={2} />
+        <g key={sy}>
+          <line x1="2" y1={sy} x2="98" y2={sy} stroke="#2E5A79" strokeWidth={1.5} />
+          <line x1="2" y1={sy + 2} x2="98" y2={sy + 2} stroke="#2E5A79" strokeWidth={1.5} />
+        </g>
       ))}
+      <line x1="2" y1="91" x2="98" y2="91" stroke="#2E5A79" strokeWidth={2} />
     </>
   );
 }
