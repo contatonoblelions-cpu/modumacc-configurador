@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { CatalogModule } from '../types/catalog';
 import type { PlacedModule, RoomDimensions, SinkFixture, FridgeFixture, StoveFixture } from '../types/composition';
 import { fetchKitchenModules, resolveVariation } from '../api/storeApi';
-import { applyWatermark, buildCollageDataUrl, buildRenderModules, generateRender } from '../api/generateRender';
+import { applyWatermark, blendImages, buildCollageDataUrl, buildRenderModules, generateRender } from '../api/generateRender';
 import { resolvePositionCm, packedPositionCm, snapPositionCm } from '../utils/placement';
 import type { PlacedRect } from '../utils/placement';
 import { getModuleBand, getBandYRange, getCountertopRatio } from '../utils/bands';
@@ -402,7 +402,13 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                             collageMimeType: collage?.mimeType,
                   });
                   const rawUrl = `data:${result.mimeType};base64,${result.imageBase64}`;
-                  const watermarked = await applyWatermark(rawUrl);
+                  // TRAVA DE FIDELIDADE: sobrepoe a colagem EXATA (o que o cliente montou)
+                  // por cima do resultado da IA, deixando a IA so como luz/sombra por baixo.
+                  // Assim o Gemini nao consegue inventar/mudar/omitir modulo -- o layout real domina.
+                  const lockedUrl = collage
+                    ? await blendImages(rawUrl, `data:${collage.mimeType};base64,${collage.base64}`, 0.72)
+                    : rawUrl;
+                  const watermarked = await applyWatermark(lockedUrl);
                   set({
                             aiRender: {
                                         loading: false,
