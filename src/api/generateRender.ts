@@ -146,6 +146,35 @@ export async function applyWatermark(dataUrl: string): Promise<string> {
   }
 }
 
+/**
+ * TRAVA DE FIDELIDADE: sobrepoe a imagem `topUrl` (a colagem EXATA do que o
+ * cliente montou) por cima de `baseUrl` (o resultado da IA), com opacidade
+ * `topAlpha`. A IA fica so como camada de luz/sombra/textura por baixo; o
+ * layout, as cores, as posicoes e os modulos reais vem da colagem por cima.
+ * Assim, mesmo que o Gemini invente, omita ou mude algo, a imagem final
+ * continua fiel ao que a pessoa criou. Determinístico -- nao depende do prompt.
+ */
+export async function blendImages(baseUrl: string, topUrl: string, topAlpha: number): Promise<string> {
+  try {
+    const base = await loadImage(baseUrl);
+    const W = base.naturalWidth || 1024;
+    const H = base.naturalHeight || 768;
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const ctx = c.getContext('2d');
+    if (!ctx) return baseUrl;
+    ctx.drawImage(base, 0, 0, W, H);
+    const top = await loadImage(topUrl);
+    ctx.globalAlpha = Math.min(1, Math.max(0, topAlpha));
+    ctx.drawImage(top, 0, 0, W, H);
+    ctx.globalAlpha = 1;
+    return c.toDataURL('image/jpeg', 0.92);
+  } catch {
+    return baseUrl;
+  }
+}
+
 export async function buildCollageDataUrl(
   params: BuildCollageParams,
 ): Promise<{ base64: string; mimeType: string } | null> {
