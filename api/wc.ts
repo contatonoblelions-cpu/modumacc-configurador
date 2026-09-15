@@ -64,9 +64,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = await upstream.text();
     res.status(upstream.status);
     res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'application/json');
-    // Cache curto na borda da Vercel — o catálogo muda raramente, isso evita
-    // bater na Store API do WooCommerce a cada carregamento do configurador.
-    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=600');
+    // SEM cache de borda: precos podem mudar no Bling a qualquer momento e o
+    // configurador precisa SEMPRE mostrar o valor atual (pedido do cliente).
+    // O catalogo e pequeno (9 produtos), entao bater na Store API a cada
+    // carregamento e barato.
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
     res.send(body);
   } catch (error) {
     res.status(502).json({
