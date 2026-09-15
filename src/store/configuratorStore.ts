@@ -132,13 +132,12 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           set({ catalogLoading: true, catalogError: null });
           try {
                   const catalog = await fetchKitchenModules();
-                  const firstWithFinish = catalog.find((m) => m.availableFinishes.length > 0);
-                  const firstWithHandle = catalog.find((m) => m.availableHandles.length > 0);
+                  // NAO pre-seleciona cor/puxador: o cliente escolhe antes de finalizar (igual ao site).
                   set({
                             catalog,
                             catalogLoading: false,
-                            finish: get().finish ?? firstWithFinish?.availableFinishes[0] ?? null,
-                            handle: get().handle ?? firstWithHandle?.availableHandles[0] ?? null,
+                            finish: get().finish ?? null,
+                            handle: get().handle ?? null,
                   });
           } catch (err) {
                   set({
@@ -340,8 +339,8 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
                                                   const match = catalogModule.variations.find(
                                                                 (v) =>
                                                                                 v.widthCm === placed.widthCm &&
-                                                                                v.finish === (finish ?? v.finish) &&
-                                                                                (catalogModule.hasHandle ? v.handle === (handle ?? v.handle) : true),
+                                                                                v.finish === finish &&
+                                                                                (catalogModule.hasHandle ? v.handle === handle : true),
                                                               );
                                         if (!match) return placed;
 
