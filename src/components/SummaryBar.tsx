@@ -15,6 +15,9 @@ export function SummaryBar() {
   const step = useConfiguratorStore((s) => s.step);
   const room = useConfiguratorStore((s) => s.room);
   const modules = useConfiguratorStore((s) => s.modules);
+  const finish = useConfiguratorStore((s) => s.finish);
+  const handle = useConfiguratorStore((s) => s.handle);
+  const catalog = useConfiguratorStore((s) => s.catalog);
   const resolving = useConfiguratorStore((s) => s.resolving);
   const goToReview = useConfiguratorStore((s) => s.goToReview);
   const [redirecting, setRedirecting] = useState(false);
@@ -27,7 +30,11 @@ export function SummaryBar() {
   // mais um estado de "não cabe" pra bloquear aqui.
   const usedCmTotal = modules.reduce((sum, m) => sum + m.widthCm, 0);
   const allResolved = modules.every((m) => m.resolvedAddToCartUrl);
-  const canProceed = modules.length > 0;
+  // Igual a pagina do produto no site: exige escolher cor e (quando o modulo
+  // tem) puxador antes de avancar/finalizar -- nada de comprar com o padrao.
+  const anyNeedsHandle = modules.some((m) => catalog.find((c) => c.id === m.moduleId)?.hasHandle);
+  const needsChoice = modules.length > 0 && (!finish || (anyNeedsHandle && !handle));
+  const canProceed = modules.length > 0 && !needsChoice;
   const canFinish = canProceed && allResolved && !resolving;
 
   async function handleFinish() {
@@ -48,6 +55,9 @@ export function SummaryBar() {
             {resolving && ' · atualizando preços...'}
           </p>
           <p className="text-base font-semibold text-brand-navy-900 sm:text-xl">{formatBRL(total)}</p>
+              {needsChoice && (
+                <p className="text-[11px] font-medium text-amber-600">Escolha a cor e o puxador para continuar</p>
+              )}
           {room && step !== 'room' && (
             <p className="text-[11px] text-brand-silver-500 md:hidden">
               {formatMeters(usedCmTotal)} de {formatMeters(room.widthCm)} ocupados
