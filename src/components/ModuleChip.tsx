@@ -31,7 +31,7 @@ export function ModuleChip({ module }: Props) {
   });
 
   return (
-    <div className="relative flex w-[76px] shrink-0 flex-col gap-1 md:hidden">
+    <div className="relative flex w-[108px] shrink-0 flex-col gap-1 md:hidden">
       <button
         type="button"
         ref={setNodeRef}
@@ -46,22 +46,20 @@ export function ModuleChip({ module }: Props) {
         {hasPhoto && (
           <ModulePhoto name={module.name} finish={finish} handle={handle} className="absolute inset-0 h-full w-full" />
         )}
-        {hasPhoto && (
-          <div
-            aria-hidden="true"
-            className="absolute inset-0"
-            style={{
-              backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.96) 78%)',
-            }}
-          />
-        )}
-        <span className={`relative z-10 line-clamp-2 text-[11px] font-semibold leading-tight ${hasPhoto ? 'text-brand-navy-900' : 'text-white'}`}>
-          {module.name}
-        </span>
-        {!multiWidth && (
-          <span className={`relative z-10 text-[10px] font-medium ${hasPhoto ? 'text-brand-navy-700' : 'text-brand-silver-200'}`}>{widthCm}cm</span>
+        {!hasPhoto && (
+          <span className="relative z-10 line-clamp-2 px-0.5 text-[11px] font-semibold leading-tight text-white">
+            {module.name}
+          </span>
         )}
       </button>
+
+      {/* Nome LEGIVEL embaixo da foto (nao sobreposto) + medida clara. */}
+      <span className="line-clamp-2 min-h-[26px] text-center text-[11px] font-semibold leading-tight text-brand-navy-900">
+        {module.name}
+      </span>
+      {!multiWidth && (
+        <span className="text-center text-[10px] font-medium text-brand-silver-600">{widthCm}cm</span>
+      )}
 
       {multiWidth && (
         <select
