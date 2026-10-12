@@ -138,9 +138,11 @@ export async function applyWatermark(dataUrl: string): Promise<string> {
     c.height = H;
     const ctx = c.getContext('2d');
     if (!ctx) return dataUrl;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, 0, W, H);
     drawWatermark(ctx, W, H);
-    return c.toDataURL('image/jpeg', 0.92);
+    return c.toDataURL('image/jpeg', 0.95);
   } catch {
     return dataUrl;
   }
@@ -156,20 +158,24 @@ export async function applyWatermark(dataUrl: string): Promise<string> {
  */
 export async function blendImages(baseUrl: string, topUrl: string, topAlpha: number): Promise<string> {
   try {
-    const base = await loadImage(baseUrl);
-    const W = base.naturalWidth || 1024;
-    const H = base.naturalHeight || 768;
+    const [base, top] = await Promise.all([loadImage(baseUrl), loadImage(topUrl)]);
+    // Usa a resolucao da COLAGEM (top) -- camada nitida e dominante. Assim a
+    // colagem nao e rebaixada pra resolucao pequena do render da IA (o que
+    // deixava a imagem final borrada); a IA entra so como luz por baixo.
+    const W = top.naturalWidth || base.naturalWidth || 1600;
+    const H = top.naturalHeight || base.naturalHeight || 1200;
     const c = document.createElement('canvas');
     c.width = W;
     c.height = H;
     const ctx = c.getContext('2d');
     if (!ctx) return baseUrl;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(base, 0, 0, W, H);
-    const top = await loadImage(topUrl);
     ctx.globalAlpha = Math.min(1, Math.max(0, topAlpha));
     ctx.drawImage(top, 0, 0, W, H);
     ctx.globalAlpha = 1;
-    return c.toDataURL('image/jpeg', 0.92);
+    return c.toDataURL('image/jpeg', 0.95);
   } catch {
     return baseUrl;
   }
@@ -201,7 +207,7 @@ export async function buildCollageDataUrl(
       // SEM foto: monta um fundo neutro de estudio (parede + piso) na proporcao
       // do ambiente, e a composicao ocupa o quadro inteiro. A IA depois
       // transforma isso numa cena realista (a foto do ambiente e opcional).
-      W = 1600;
+      W = 1920;
       H = Math.max(300, Math.round(W * ratio));
       canvas.width = W;
       canvas.height = H;
@@ -221,6 +227,8 @@ export async function buildCollageDataUrl(
     }
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     // Geladeira e fogao (referencia visual) ancorados no chao, ATRAS dos modulos.
     const drawFloorPhoto = async (url: string, offsetXCm: number, wCm: number, hCm: number) => {
@@ -320,7 +328,7 @@ export async function buildCollageDataUrl(
     }
 
     drawWatermark(ctx, W, H);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
     const base64 = dataUrl.split(',')[1] ?? '';
     if (!base64) return null;
     return { base64, mimeType: 'image/jpeg' };
