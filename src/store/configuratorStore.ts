@@ -132,12 +132,17 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
           set({ catalogLoading: true, catalogError: null });
           try {
                   const catalog = await fetchKitchenModules();
-                  // NAO pre-seleciona cor/puxador: o cliente escolhe antes de finalizar (igual ao site).
+                  // Padrao: puxador Aluminio (prata) e cor Branco -- a pessoa avanca direto
+                  // sem precisar escolher; se quiser, troca nas bolinhas (pedido do cliente).
+                  const finishes = [...new Set(catalog.flatMap((m) => m.availableFinishes))];
+                  const handles = [...new Set(catalog.flatMap((m) => m.availableHandles))];
+                  const defFinish = finishes.includes('Branco') ? 'Branco' : (finishes[0] ?? null);
+                  const defHandle = handles.includes('Alumínio') ? 'Alumínio' : (handles[0] ?? null);
                   set({
                             catalog,
                             catalogLoading: false,
-                            finish: get().finish ?? null,
-                            handle: get().handle ?? null,
+                            finish: get().finish ?? defFinish,
+                            handle: get().handle ?? defHandle,
                   });
           } catch (err) {
                   set({
