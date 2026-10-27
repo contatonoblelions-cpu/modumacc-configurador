@@ -101,8 +101,9 @@ export function RoomSizeForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[70vh] w-full max-w-md flex-1 flex-col justify-center px-4">
-      <div className="rounded-2xl border border-white/60 bg-white/70 p-8 shadow-xl shadow-brand-navy-900/5 backdrop-blur-xl">
+    <div className="flex-1 overflow-y-auto">
+      <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-6">
+      <div className="rounded-2xl border border-white/60 bg-white/70 p-6 shadow-xl shadow-brand-navy-900/5 backdrop-blur-xl sm:p-8">
       <h1 className="mb-2 text-2xl font-semibold text-brand-navy-900">Monte sua cozinha</h1>
       <p className="mb-8 text-brand-silver-700">
         Informe as medidas do espaço disponível. Você vai montar a parede
@@ -256,6 +257,7 @@ export function RoomSizeForm() {
           Começar a montar
         </button>
       </form>
+      </div>
       </div>
     </div>
   );
