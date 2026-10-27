@@ -129,9 +129,9 @@ function Gavetas({ count, fill, handleFill, handleStroke }: { count: number; fil
 function Nicho() {
   // Nichos e SEMPRE branco puro (pedido do cliente), nao acompanha o acabamento.
   const fill = "#ffffff";
-  // "Nichos" = coluna de nichos ABERTOS (linha limpa igual ao desenho de
-  // referencia): moldura + 3 prateleiras (linha DUPLA = espessura) + rodape
-  // na base. Topo levemente menor. Sem porta, puxador nem sombreado.
+  // "Nichos" = coluna de nichos ABERTOS: moldura + 3 prateleiras (linha
+  // DUPLA = espessura) formando 4 vaos. Sem rodape/linha extra embaixo
+  // (pedido do cliente: sao 4 vaos, nao 5), sem porta, puxador nem sombreado.
   const shelves = [19, 44, 69];
   return (
     <>
@@ -142,7 +142,6 @@ function Nicho() {
           <line x1="2" y1={sy + 2} x2="98" y2={sy + 2} stroke="#2E5A79" strokeWidth={1.5} />
         </g>
       ))}
-      <line x1="2" y1="91" x2="98" y2="91" stroke="#2E5A79" strokeWidth={2} />
     </>
   );
 }
