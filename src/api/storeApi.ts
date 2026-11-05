@@ -118,6 +118,18 @@ export async function fetchKitchenModules(): Promise<CatalogModule[]> {
   return products
     .filter((p) => p.type === 'variable' || p.type === 'simple')
     .filter((p) => !HIDDEN_PRODUCT_IDS.includes(p.id))
+    // So entra no configurador o que e MODULO de verdade (nome comeca com
+    // "Modulo"). As "cozinhas prontas" (combos "Cozinha ...", os anuncios do
+    // site) caem na mesma categoria Cozinha, mas nao sao pecas avulsas pra
+    // montar -- entao ficam de fora daqui, sem precisar mexer no site.
+    .filter((p) =>
+      p.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase()
+        .startsWith('modulo'),
+    )
     .map(mapProductToModule)
     // Se todas as larguras de um produto foram escondidas (ver
     // `HIDDEN_WIDTHS_BY_PRODUCT`), o produto some do catalogo tambem --
