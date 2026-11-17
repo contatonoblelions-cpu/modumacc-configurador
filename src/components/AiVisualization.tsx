@@ -49,7 +49,7 @@ export function AiVisualization() {
           />
           <path d="M12 3v9m0 9v-9m0 0L4 7.5m8 4.5l8-4.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        Visualizar em 3D
+        Visualizar combinação
       </button>
 
       {open && createPortal(
@@ -62,7 +62,7 @@ export function AiVisualization() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-brand-navy-900">Visualização</h2>
+              <h2 className="text-lg font-semibold text-brand-navy-900">Visualização da combinação</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
