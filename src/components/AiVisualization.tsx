@@ -3,51 +3,29 @@ import { createPortal } from 'react-dom';
 import { useConfiguratorStore } from '../store/configuratorStore';
 import { PhotoCollage } from './PhotoCollage';
 
-type Tab = 'collage' | 'ai';
-
 /**
- * Botão "Visualizar em 3D" + modal com DUAS formas de ver a composição em
- * cima da foto do ambiente:
- * 1. "Com IA" (aba padrão ao abrir, é o ponto principal do botão) — manda
- *    tudo pro Gemini (`generateAiRender` na store: acabamento/madeira, cor
- *    do puxador, e nome+medidas de cada módulo colocado — ver
- *    `api/generateRender.ts` e `api/generate-render.ts` no backend) recriar
- *    a cena com luz/sombra realista, como se fosse a cozinha já pronta.
- *    Clicar no botão já dispara a geração automaticamente, sem passo extra.
- * 2. "Colagem" (aba secundária, `PhotoCollage.tsx`) — cola as fotos reais
- *    dos módulos direto na foto, na posição exata montada. Instantâneo, sem
- *    custo de IA — útil como conferência rápida antes/depois de gerar a
- *    versão com IA, ou caso a IA demore/erre.
+ * Botao "Visualizar" + modal que mostra a composicao montada em cima da
+ * foto do ambiente usando a COLAGEM (`PhotoCollage.tsx`): cola as fotos
+ * reais dos modulos direto na foto, na posicao exata -- instantaneo e sem
+ * custo.
+ *
+ * A geracao com IA (Gemini) foi DESATIVADA a pedido do cliente -- ficou so a
+ * colagem. O codigo de IA (`generateAiRender` na store, `api/generateRender.ts`
+ * e `api/generate-render.ts` no backend) continua no projeto, apenas nao e
+ * mais chamado, pra ficar facil reativar depois se quiser.
  */
 export function AiVisualization() {
   const modules = useConfiguratorStore((s) => s.modules);
-  const aiRender = useConfiguratorStore((s) => s.aiRender);
-  const generateAiRender = useConfiguratorStore((s) => s.generateAiRender);
-
-
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>('ai');
 
-  // A foto do ambiente e OPCIONAL — basta ter ao menos um modulo montado.
+  // A foto do ambiente e OPCIONAL -- basta ter ao menos um modulo montado.
   const canOpen = modules.length > 0;
-
-  function openModal() {
-    setTab('ai');
-    setOpen(true);
-    // Já dispara a geração com IA na hora de abrir — o botão "Visualizar em
-    // 3D" é pra ser um único clique até o resultado, sem passo intermediário.
-    if (!aiRender.imageDataUrl && !aiRender.loading) void generateAiRender();
-  }
-
-  function closeModal() {
-    setOpen(false);
-  }
 
   return (
     <>
       <button
         type="button"
-        onClick={openModal}
+        onClick={() => setOpen(true)}
         disabled={!canOpen}
         title={
           modules.length === 0
@@ -77,120 +55,24 @@ export function AiVisualization() {
       {open && createPortal(
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
-          onClick={closeModal}
+          onClick={() => setOpen(false)}
         >
           <div
             className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-xl bg-white p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-brand-navy-900">Visualização em 3D</h2>
+              <h2 className="text-lg font-semibold text-brand-navy-900">Visualização</h2>
               <button
                 type="button"
-                onClick={closeModal}
+                onClick={() => setOpen(false)}
                 className="rounded-lg bg-brand-navy-800 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-900"
               >
                 Fechar
               </button>
             </div>
 
-            <div className="mb-4 flex gap-1 rounded-lg bg-brand-silver-100 p-1 text-sm">
-              <button
-                type="button"
-                onClick={() => setTab('ai')}
-                className={`flex-1 rounded-md py-1.5 font-medium transition ${
-                  tab === 'ai' ? 'bg-white text-brand-accent-700 shadow-sm' : 'text-brand-silver-600'
-                }`}
-              >
-                Com IA (3D)
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab('collage')}
-                className={`flex-1 rounded-md py-1.5 font-medium transition ${
-                  tab === 'collage' ? 'bg-white text-brand-navy-900 shadow-sm' : 'text-brand-silver-600'
-                }`}
-              >
-                Colagem
-              </button>
-            </div>
-
-            {tab === 'collage' && (
-              <div>
-                <PhotoCollage />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTab('ai');
-                    if (!aiRender.loading) void generateAiRender();
-                  }}
-                  className="mt-3 w-full rounded-lg bg-brand-accent-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-accent-800"
-                >
-                  Ver em 3D com IA →
-                </button>
-              </div>
-            )}
-
-            {tab === 'ai' && (
-              <div>
-                {!aiRender.loading && !aiRender.imageDataUrl && !aiRender.error && (
-                  <div className="flex flex-col items-center gap-3 py-10 text-center">
-                    <p className="text-sm text-brand-silver-600">
-                      Gera uma versão realista, com luz e sombra, usando o acabamento, o puxador e os
-                      módulos exatos que você escolheu. Se você enviou uma foto do ambiente, a IA usa
-                      ela de fundo; se não, monta a cozinha num cenário limpo.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => void generateAiRender()}
-                      className="rounded-lg bg-brand-accent-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-accent-800"
-                    >
-                      Gerar visualização em 3D
-                    </button>
-                  </div>
-                )}
-
-                {aiRender.loading && (
-                  <div className="flex flex-col items-center justify-center gap-3 py-16">
-                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-silver-200 border-t-brand-navy-800" />
-                    <p className="text-sm text-brand-silver-600">
-                      Gerando a visualização do seu ambiente com os móveis escolhidos...
-                    </p>
-                  </div>
-                )}
-
-                {aiRender.error && (
-                  <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">{aiRender.error}</div>
-                )}
-
-                {aiRender.imageDataUrl && (
-                  <div>
-                    <img
-                      src={aiRender.imageDataUrl}
-                      alt="Visualização gerada com IA do ambiente com os móveis escolhidos"
-                      className="w-full rounded-lg"
-                    />
-                    <a
-                      href={aiRender.imageDataUrl}
-                      download="cozinha-modumacc-3d.png"
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-brand-navy-800 px-4 py-2.5 text-sm font-medium text-brand-navy-800 transition hover:bg-brand-navy-50"
-                    >
-                      <span aria-hidden="true">⭳</span> Baixar imagem 3D
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => void generateAiRender()}
-                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-navy-800 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-900"
-                    >
-                      <span aria-hidden="true">↻</span> Gerar novamente
-                    </button>
-                    <p className="mt-1.5 text-center text-xs text-brand-silver-600">
-                      Mudou a montagem? Clique aqui pra gerar um novo 3D do zero.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+            <PhotoCollage />
           </div>
         </div>,
         document.body,

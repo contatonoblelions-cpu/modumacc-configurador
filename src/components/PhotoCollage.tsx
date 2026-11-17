@@ -168,9 +168,8 @@ export function PhotoCollage() {
 
       <p className="mt-2 text-xs text-brand-silver-600">
         {hasPhoto
-          ? 'Posição aproximada, centralizada sobre a foto — sem IA, é a colagem exata do que você montou.'
-          : 'Prévia da composição num cenário neutro — sem IA, é a colagem exata do que você montou.'}{' '}
-        Pra um render realista com luz e sombra, use "Refinar com IA" abaixo.
+          ? 'Posição aproximada, centralizada sobre a foto — é a colagem exata do que você montou.'
+          : 'Prévia da composição num cenário neutro — é a colagem exata do que você montou.'}
       </p>
     </div>
   );
